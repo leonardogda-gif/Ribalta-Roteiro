@@ -573,6 +573,18 @@ details.more-d summary small{font-weight:400;color:var(--muted);margin-left:6px}
 .docsum{border-radius:12px;background:var(--bg);padding:12px 14px;display:grid;gap:4px;font-size:14px}
 .docsum b{font-size:15px}
 .docsum.warn{background:var(--warn-soft);color:var(--warn)}
+.btn.wrap{white-space:normal;text-align:left;justify-content:flex-start}
+.quick{display:flex;gap:10px;flex-wrap:wrap;margin-top:-12px}
+.quick .btn{min-height:50px;padding:10px 18px;font-size:16px}
+.ideas{display:grid;gap:12px}
+.idea-card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:12px;display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}
+.idea-card textarea{background:transparent;border-color:transparent;font-size:16px;min-height:0;resize:none}
+.idea-card textarea:focus{border-color:var(--line);background:var(--bg)}
+.saved.err{color:var(--danger)}.saved.err i{background:var(--danger)}.saved.err span{display:inline!important}
+.mdur{font-family:var(--f-ui);font-size:12px;font-weight:700;border:0;border-radius:999px;padding:2px 9px;margin:2px 0 0 8px;background:var(--canvas);color:var(--muted);flex:none;cursor:pointer;white-space:nowrap;font-style:normal;text-transform:none;align-self:center}
+.mdur.warn{background:var(--warn-soft);color:var(--warn)}
+.el-musica{flex-wrap:wrap}.el-musica textarea{flex:1 1 calc(100% - 96px)}.el-musica .mdur{margin-left:auto}
+@media (max-width:760px){.bnav{grid-template-columns:repeat(6,minmax(0,1fr))}.bnav button{font-size:10.5px;padding:6px 0;letter-spacing:-.1px}.bnav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
 .p-item .t small.fn{white-space:normal;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 button.doc-title{border:0;background:none;text-align:left;padding:4px 6px;border-radius:8px;color:inherit}
 button.doc-title:hover{background:var(--bg)}
@@ -606,7 +618,9 @@ const STAGES=[
   {k:"roteiro",l:"Roteiro",g:"Criar"},{k:"ensaio",l:"Ensaio",g:"Preparar"},{k:"producao",l:"Produção",g:"Preparar"},{k:"documentos",l:"Documentos",g:"Finalizar"}];
 const GROUPS=["Criar","Preparar","Finalizar"];
 const eyebrowOf=k=>{ const s=STAGES.find(x=>x.k===k); return s&&s.g?`${s.g} · ${s.l}`:"Visão geral"; };
-const MORE=["historia","personagens","producao","documentos"];
+const MORE=["ensaio","producao","documentos"];
+/* atalho direto para a Iluminação (ela continua morando dentro de Produção) */
+const luzNavBtn=p=>{ const on=p.tab==="producao"&&S.ptab==="luz"; return `<button class="${on?"on":""}" data-a="luzgo" data-k="luz" ${on?'aria-current="page"':""}>Iluminação</button>`; };
 const STATUS={nao:{i:"○",l:"Não ensaiada"},ensaio:{i:"◐",l:"Em ensaio"},ok:{i:"✓",l:"Ensaiada"}};
 const stIcon=k=>k==="ok"?'<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   :k==="ensaio"?'<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>'
@@ -670,9 +684,30 @@ function ensureDefaults(p){
   p.els=p.els||[]; p.els.forEach(e=>{ if(e.t==="cena") sceneDefaults(e); });
   if(p.tab==="plano") p.tab="historia"; if(p.tab==="imprimir") p.tab="documentos";
   if(!STAGES.some(s=>s.k===p.tab)) p.tab="historia";
-  p.ideias=p.ideias||[]; p.check=p.check||{}; lightDefaults(p);
+  p.producao.outros=p.producao.outros||"";
+  /* ideias antigas eram só texto; viram {id,texto,data} sem perder nada */
+  p.ideias=(p.ideias||[]).map(x=>typeof x==="string"?{id:uid(),texto:x,data:0}:x).filter(x=>x&&String(x.texto||"").trim());
+  p.ideias.forEach(x=>{ x.id=x.id||uid(); x.sceneId=x.sceneId||""; x.charId=x.charId||""; x.data=x.data||0; });
+  p.check=p.check||{}; lightDefaults(p); musicDefaults(p);
   return p;
 }
+/* ===== músicas da peça: cadastro único, ligado às linhas "Música" do roteiro =====
+   p.musicas=[{id,nome,link,dur,ini,fim,tipo,quem,obs}]. A linha do roteiro guarda mid (opcional).
+   Na primeira abertura, a lista é montada com as músicas que já estão no roteiro. */
+const MUS_TIPOS=[["coral","Coral ou canto"],["danca","Dança"],["fundo","Fundo (não soma tempo)"],["efeito","Efeito sonoro"]];
+const musName=t=>String(t||"").trim().replace(/[.。]+$/,"").trim();
+function musGuess(t){ const v=norm(t); return /coral|cant/.test(v)?"coral":/danc|coreograf/.test(v)?"danca":/sino|bebe|chor|efeito|som de|trovao|vento/.test(v)?"efeito":/instrumental|fundo/.test(v)?"fundo":""; }
+function musicDefaults(p){
+  if(!Array.isArray(p.musicas)){ p.musicas=[]; p.els.forEach(e=>{ if(e.t!=="musica"||!e.x.trim()) return; const nm=musName(e.x); let m=p.musicas.find(x=>norm(x.nome)===norm(nm)); if(!m){ m={id:uid(),nome:nm,tipo:musGuess(nm)}; p.musicas.push(m); } e.mid=m.id; }); }
+  p.musicas.forEach(m=>{ ["nome","link","dur","ini","fim","tipo","quem","obs"].forEach(k=>{ if(m[k]==null) m[k]=""; }); if(!m.id) m.id=uid(); });
+}
+function parseDur(t){ const v=String(t||"").trim().replace(",","."); let m;
+  if((m=v.match(/^(\d+):(\d{1,2})$/))) return +m[1]*60+ +m[2];
+  if((m=v.match(/^(\d+(?:\.\d+)?)\s*(min)?$/i))) return Math.round(+m[1]*60);
+  if((m=v.match(/^(\d+)\s*s$/i))) return +m[1]; return 0; }
+function musSecs(m){ if(!m) return 0; const a=parseDur(m.ini), b=parseDur(m.fim); if(m.fim&&b>a) return b-a; return parseDur(m.dur); }
+function musOf(p,e){ if(!p||!p.musicas||!e) return null; return (e.mid&&p.musicas.find(m=>m.id===e.mid))||p.musicas.find(m=>norm(m.nome)===norm(musName(e.x)))||null; }
+function musUses(p,m){ const out=[]; named(p).forEach(s=>{ for(let i=s.start;i<s.end;i++){ const e=p.els[i]; if(e.t==="musica"&&musOf(p,e)===m&&!out.includes(s.n)) out.push(s.n); } }); return out; }
 function examplePlay(){
   const p=blankPlay(); const E=(t,x,o)=>({id:uid(),t,x,...(o||{})});
   Object.assign(p,{id:"exemplo",exemplo:true,titulo:"A Ovelha que Voltou",grupo:"Ministério de Teatro",tema:"Deus vai atrás de quem se perdeu e faz festa quando volta.",
@@ -833,15 +868,15 @@ function migrate(o){
    ESTADO E GRAVAÇÃO (local sempre; nuvem quando aberto no Claude)
    ===================================================================== */
 let S={plays:{},lastId:null,view:"home",guiado:false,focus:0,curId:null,sceneSel:null,charSel:null,ptab:"lista",rview:"cena",rfs:18,rchar:"",
-  q:"",sort:"recentes",menu:null,renaming:null,showLong:false,an:{},dismiss:new Set(),ltab:"cues",lsel:null,scMenu:null,open:{},
-  print:{docs:{roteiro:true,porCena:false,falas:false,personagem:false,ficha:false,tecnica:false,necessidades:false,figurinos:false,objetos:false,musicas:false,cenas:false,ensaio:false,luz:false,operador:false,mtec:false},
+  q:"",sort:"recentes",menu:null,renaming:null,showLong:false,an:{},dismiss:new Set(),ltab:"cues",lsel:null,scMenu:null,open:{},ideas:[],skip:{},saveErr:false,
+  print:{docs:{roteiro:true,porCena:false,falas:false,personagem:false,ficha:false,tecnica:false,necessidades:false,figurinos:false,objetos:false,musicas:false,cenas:false,ensaio:false,luz:false,operador:false,mtec:false,som:false},
     cenaPagina:false,cores:false,numerar:true,marca:true,tamanho:"12",atorSel:"todos",atorNome:"todos",cenaSel:""}};
 let db=null,me=null,sample=null,downloads=null;
 const undo=[];
 function loadLocal(){
   try{
     const raw=localStorage.getItem(LS);
-    if(raw){ const d=JSON.parse(raw); for(const k in (d.plays||{})) S.plays[k]=migrate(d.plays[k]); S.lastId=d.lastId||null; S.guiado=!!d.guiado; S.rfs=d.rfs||18;
+    if(raw){ const d=JSON.parse(raw); for(const k in (d.plays||{})) S.plays[k]=migrate(d.plays[k]); S.lastId=d.lastId||null; S.guiado=!!d.guiado; S.rfs=d.rfs||18; S.ideas=Array.isArray(d.ideias)?d.ideias.filter(x=>x&&x.texto):[];
       if(d.print){ const o=d.print; S.print={...S.print,...o,docs:{...S.print.docs,...(o.docs||{})}};
         if(!o.docs){ S.print.docs.roteiro=o.roteiro!==false; S.print.docs.falas=!!o.atores; S.print.docs.tecnica=!!o.ficha; } } }
     else { const old=localStorage.getItem(LS_OLD); if(old){ const d=JSON.parse(old); for(const k in (d.plays||{})) S.plays[k]=migrate(d.plays[k]); S.lastId=d.lastId||null; } }
@@ -855,7 +890,10 @@ function loadLocal(){
 let keepT=null; function keep(){ clearTimeout(keepT); keepT=setTimeout(saveLocal,300); }
 window.addEventListener("pagehide",()=>saveLocal());
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) saveLocal(); });
-function saveLocal(){ try{ localStorage.setItem(LS,JSON.stringify({plays:S.plays,lastId:S.lastId,guiado:S.guiado,print:S.print,rfs:S.rfs})); }catch(e){} }
+/* devolve true/false: a tela nunca diz "salvo" se o navegador recusou */
+function saveLocal(){ let ok=true; try{ localStorage.setItem(LS,JSON.stringify({plays:S.plays,lastId:S.lastId,guiado:S.guiado,print:S.print,rfs:S.rfs,ideias:S.ideas})); }catch(e){ ok=false; }
+  const was=S.saveErr; S.saveErr=!ok; if(!ok&&!was) toast("Não foi possível salvar neste aparelho. O navegador está sem espaço ou em modo anônimo."); if(was!==S.saveErr) setSaved(false); return ok; }
+window.addEventListener("beforeunload",e=>{ const ok=saveLocal(); if(!ok){ e.preventDefault(); e.returnValue=""; } });
 let saveT=null; const pending=new Set();
 function touch(p){ p.updatedAt=Date.now(); S.lastId=p.id; setSaved(true); pending.add(p.id); clearTimeout(saveT); saveT=setTimeout(flush,700); }
 async function flush(){
@@ -865,8 +903,9 @@ async function flush(){
     try{ await db.collection("data/users/"+me).doc(id).set({json:JSON.stringify(p),updatedAt:p.updatedAt}); }catch(e){} }
   setSaved(false);
 }
-function setSaved(busy){ const el=$("#saved"); if(!el) return; el.classList.toggle("busy",busy);
-  el.lastElementChild.textContent=busy?"Salvando…":"Salvo "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}); }
+function setSaved(busy){ const el=$("#saved"); if(!el) return; el.classList.toggle("busy",busy&&!S.saveErr); el.classList.toggle("err",!!S.saveErr);
+  el.lastElementChild.textContent=S.saveErr?"Não salvo":busy?"Salvando…":"Tudo salvo ✓";
+  el.title=S.saveErr?"O navegador não deixou salvar. Libere espaço ou saia do modo anônimo.":busy?"":"Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}); }
 async function connect(){
   try{
     const c=window.claude; if(!c||!c.use) return;
@@ -914,15 +953,17 @@ function sceneOfIndex(p,idx){ const sc=scenes(p); return Math.max(0,sc.findIndex
 function sceneById(p,id){ return scenes(p).find(s=>s.el&&s.el.id===id); }
 function speakerOf(p,i){ for(let k=i;k>=0;k--){ const e=p.els[k]; if(e.t==="personagem") return e.x; if(e.t!=="fala"&&e.t!=="parentese") return null; } return null; }
 const words=t=>String(t||"").trim().split(/\s+/).filter(Boolean).length;
-function secondsOf(els){ let s=0; els.forEach(e=>{ const w=words(e.x); if(e.t==="fala") s+=w/130*60+1.5; else if(e.t==="acao") s+=w/200*60+3; else if(e.t==="musica") s+=60; else if(e.t==="transicao") s+=5; }); return Math.round(s); }
+/* estimativa: falas 130 palavras/min + 1,5 s; rubricas 200 palavras/min + 3 s; transição 5 s;
+   música: a duração cadastrada (ou o trecho); música de fundo não soma; sem duração, 1 minuto */
+function secondsOf(els,p){ let s=0; els.forEach(e=>{ const w=words(e.x); if(e.t==="fala") s+=w/130*60+1.5; else if(e.t==="acao") s+=w/200*60+3; else if(e.t==="musica"){ const m=musOf(p,e); if(m&&m.tipo==="fundo") return; s+=musSecs(m)||60; } else if(e.t==="transicao") s+=5; }); return Math.round(s); }
 function sceneInfo(p,s){ return memo("si:"+p.id+":"+s.start+":"+s.end,()=>sceneInfoRaw(p,s)); }
 function sceneInfoRaw(p,s){
   const els=p.els.slice(s.start,s.end);
   const speakers=[]; els.forEach(e=>{ if(e.t==="personagem"&&e.x.trim()&&!speakers.some(n=>norm(n)===norm(e.x))) speakers.push(e.x.trim()); });
   const extra=(s.el?s.el.extra:[]).filter(n=>!speakers.some(x=>norm(x)===norm(n)));
   const falas=els.filter(e=>e.t==="fala"&&e.x.trim()).length;
-  const est=secondsOf(els); const planned=s.el&&+s.el.dur>0?Math.round(+s.el.dur*60):0;
-  return {els,speakers,extra,chars:[...speakers,...extra],falas,est,planned,secs:falas?est:(planned||est),written:falas>0};
+  const est=secondsOf(els,p); const planned=s.el&&+s.el.dur>0?Math.round(+s.el.dur*60):0;
+  return {els,speakers,extra,chars:[...speakers,...extra],falas,est,planned,secs:planned||est,written:falas>0,musNoDur:els.filter(e=>e.t==="musica"&&e.x.trim()&&(()=>{ const m=musOf(p,e); return !(m&&(m.tipo==="fundo"||musSecs(m))); })()).length};
 }
 const fmt=s=>{ s=Math.max(0,Math.round(s)); const m=Math.floor(s/60), r=s%60; return m+":"+String(r).padStart(2,"0"); };
 const fmtLong=s=>{ s=Math.round(s); const m=Math.floor(s/60), r=s%60; return m? `${m}min${r?` ${String(r).padStart(2,"0")}s`:""}`:`${r}s`; };
@@ -944,6 +985,7 @@ function durHTML(p,compact){
     <div><span class="eyebrow">Estimativa atual</span><div class="big">${fmtLong(d.t)}</div></div>
     ${d.meta?`<div class="meter" aria-hidden="true"><i style="width:${pct}%"></i></div><span class="pill ${d.pill}">${d.pill==="warn"?"⚠ ":d.pill==="ok"?"✓ ":""}${d.short}</span>`:""}
     <span class="msg">${d.cls==="over"?"⚠ ":""}${esc(d.msg)}</span>
+    ${(()=>{ const md=named(p).reduce((a,s)=>a+sceneInfo(p,s).musNoDur,0); return md?`<span class="msg">♪ ${pl(md,"música sem duração conta","músicas sem duração contam")} 1 minuto cada. <button class="btn sm ghost" data-a="luzgo" data-k="som">Cadastrar durações</button></span>`:""; })()}
     ${many?`<div class="row" style="flex-basis:100%"><button class="btn sm ${d.cls==="over"?"":"ghost"}" data-a="longs" aria-expanded="${S.showLong}">${S.showLong?"Esconder cenas longas":d.cls==="over"?"Encontrar cenas que mais contribuem para o excesso":"Ver as cenas mais longas"}</button>${d.cls==="over"&&sample?`<button class="btn sm spot" data-a="askai" data-q="Minha peça está ${fmtLong(d.diff)} acima da duração desejada. Analise as cenas mais longas e sugira cortes concretos, sem apagar nada sozinha.">${I.spark}Pedir sugestões de corte</button>`:""}</div>`:""}
     ${S.showLong&&many?longsHTML(p):""}</div>`;
 }
@@ -1012,6 +1054,7 @@ function renderRaw(){
   document.body.classList.remove("typing");
   if(S.view==="home"){ app.innerHTML=homeHTML(); return; }
   if(S.view==="new"){ app.innerHTML=newHTML(); setTimeout(()=>$("#npIdea")?.focus(),50); return; }
+  if(S.view==="ideas"){ app.innerHTML=ideasHTML(); autosizeAll(); return; }
   const p=cur(); if(!p){ S.view="home"; app.innerHTML=homeHTML(); return; }
   ensureDefaults(p);
   const st=STAGES.find(s=>s.k===p.tab);
@@ -1019,15 +1062,16 @@ function renderRaw(){
       <button class="btn sm icon ghost" data-a="back" aria-label="Voltar" title="Voltar">${I.back}</button>
       <button class="brand" data-a="home" aria-label="Minhas peças" title="Minhas peças">${LOGO}<span class="hide-sm">Ribalta</span></button>
       <button class="doc-title" data-a="tab" data-k="geral" title="Visão geral da peça"><b id="docTitle">${esc(p.titulo||"Peça sem título")}</b><small class="only-sm">${st.l}</small></button>
-      <div class="saved" id="saved"><i></i><span>Salvo</span></div>
+      <div class="saved ${S.saveErr?"err":""}" id="saved" role="status"><i></i><span>${S.saveErr?"Não salvo":"Tudo salvo ✓"}</span></div>
       <button class="btn sm icon ghost" data-a="undo" id="undoBtn" aria-label="Desfazer" title="Desfazer" ${undo.length?"":"disabled"}>${I.undo}</button>
-      ${sample?`<button class="btn sm ghost" data-a="assist" title="Assistente de IA">${I.spark}<span class="hide-sm">Assistente</span></button>`:""}
-      <button class="btn sm icon ghost hide-sm" data-a="more" aria-label="Mais opções" title="Ideias soltas, modo guiado e outras opções">${I.more}</button>
+      <button class="btn sm ghost" data-a="capture" aria-label="Anotar ideia" title="Anotar uma ideia rápida">${I.bulb}<span class="hide-sm">Anotar ideia</span></button>
+      ${sample?`<button class="btn sm ghost" data-a="assist" aria-label="Assistente de IA" title="Assistente de IA">${I.spark}<span class="hide-sm">Assistente</span></button>`:""}
+      <button class="btn sm icon ghost hide-sm" data-a="more" aria-label="Mais opções" title="Minhas ideias, modo guiado e outras opções">${I.more}</button>
     </div>
-    <nav class="stages" aria-label="Áreas da peça">${STAGES.map((s,i)=>`${s.g&&s.g!==(STAGES[i-1]||{}).g?`<span class="grp" aria-hidden="true">${s.g}</span>`:""}<button class="${p.tab===s.k?"on":""}" data-a="tab" data-k="${s.k}" ${p.tab===s.k?'aria-current="page"':""}>${s.l}</button>`).join("")}</nav></header>
+    <nav class="stages" aria-label="Áreas da peça">${STAGES.map((s,i)=>{ const on=p.tab===s.k&&!(s.k==="producao"&&S.ptab==="luz"); return `${s.g&&s.g!==(STAGES[i-1]||{}).g?`<span class="grp" aria-hidden="true">${s.g}</span>`:""}<button class="${on?"on":""}" data-a="tab" data-k="${s.k}" ${on?'aria-current="page"':""}>${s.l}</button>${s.k==="producao"?luzNavBtn(p):""}`; }).join("")}</nav></header>
     <main class="work" id="work"></main>
-    <nav class="bnav" aria-label="Etapas">${[["geral","Visão geral"],["cenas","Cenas"],["roteiro","Roteiro"],["ensaio","Ensaio"]].map(([k,l])=>`<button class="${p.tab===k?"on":""}" data-a="tab" data-k="${k}" ${p.tab===k?'aria-current="page"':""}>${I[k]}${l}</button>`).join("")}
-      <button class="${MORE.includes(p.tab)?"on":""}" data-a="more">${I.more}${MORE.includes(p.tab)?esc(st.l):"Mais"}</button></nav>`;
+    <nav class="bnav" aria-label="Áreas">${[["geral","Início"],["historia","História"],["personagens","Personagens"],["cenas","Cenas"],["roteiro","Roteiro"]].map(([k,l])=>`<button class="${p.tab===k?"on":""}" data-a="tab" data-k="${k}" ${p.tab===k?'aria-current="page"':""}>${I[k]}<span>${l}</span></button>`).join("")}
+      <button class="${MORE.includes(p.tab)?"on":""}" data-a="more" aria-label="Mais áreas">${I.more}<span>${MORE.includes(p.tab)?esc(p.tab==="producao"&&S.ptab==="luz"?"Luz":st.l):"Mais"}</span></button></nav>`;
   renderMain();
 }
 function renderMain(){ withMemo(renderMainRaw); }
@@ -1065,6 +1109,7 @@ function goBackCore(){
   if(L) L.innerHTML="";
   if(top.view==="home"){ toHome(); return; }
   if(top.view==="new"){ S.view="new"; render(); scrollTo(0,0); return; }
+  if(top.view==="ideas"){ S.view="ideas"; render(); scrollTo(0,0); return; }
   S.view="edit"; S.lastId=top.id; const p=cur(); if(!p){ toHome(); return; }
   p.tab=top.tab; S.charSel=top.charSel; keep(); render(); scrollTo(0,0);
 }
@@ -1113,22 +1158,75 @@ function whereLabel(p){ const st=STAGES.find(s=>s.k===p.tab); let t=st?st.l:"Vis
   if(["roteiro","ensaio","cenas"].includes(p.tab)&&p.lastScene){ const s=sceneById(p,p.lastScene); if(s) t+=` — Cena ${s.n}${s.el.x?" · "+s.el.x:""}`; } return t; }
 function hubHeader(back,bare){ return `<header class="hub-top"><div class="in">${back?`<button class="btn sm ghost" data-a="back">${I.back}Voltar</button>`:`<span class="brand">${LOGO}Ribalta</span>`}<span class="spacer"></span>${back||bare?"":`<button class="btn" data-a="newp">${I.plus}Nova peça</button>`}</div></header>`; }
 function homeHTML(){
-  const all=Object.values(S.plays);
+  const all=Object.values(S.plays), ni=allIdeas().length;
+  const ideaBtn=`<button class="btn" data-a="capture">${I.bulb}Anotar uma ideia</button>`;
   if(!all.length) return hubHeader(false,true)+`<main class="hub"><div class="hub-empty"><svg width="64" height="64" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 4h26v3c-3 0-4 4-4 10s1 10 4 12H18c2-4 2-9 0-13-1-2-3-3-2-6C14 13 14 18 14 29H3c3-2 4-6 4-12S6 7 3 7z" fill="var(--brand)"/><circle cx="16" cy="7.5" r="2.2" fill="var(--spot)"/></svg>
-    <h1>Que bom ter você aqui.</h1><p>Toda peça começa com uma ideia. Escreva a sua em uma frase e a Ribalta ajuda com o resto, no seu ritmo.</p><button class="btn primary" data-a="newp">${I.plus}Criar minha primeira peça</button></div></main>`;
+    <h1>Que bom ter você aqui.</h1><p>Toda peça começa com uma ideia. Escreva a sua em uma frase e a Ribalta ajuda com o resto, no seu ritmo.</p><button class="btn primary" data-a="newp">${I.plus}Criar minha primeira peça</button>
+    <div class="row" style="justify-content:center">${ideaBtn}${ni?`<button class="btn ghost" data-a="ideasview">Ver minhas ideias (${ni})</button>`:""}</div></div></main>`;
   const last=S.plays[S.lastId]||all.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))[0];
-  return hubHeader()+`<main class="hub">${last?resumeHTML(last):""}
-    <section><div class="hub-head"><div><h1>${last?"Todas as peças":"Minhas peças"}</h1><p class="note">${pl(all.length,"peça","peças")}. As favoritas aparecem primeiro.</p></div>
+  return hubHeader(false,true)+`<main class="hub">${last?resumeHTML(last):""}
+    <div class="quick">${ideaBtn}<button class="btn" data-a="newp">${I.plus}Criar nova peça</button>${ni?`<button class="btn ghost" data-a="ideasview">Minhas ideias <span class="pill">${ni}</span></button>`:""}</div>
+    <section><div class="hub-head"><div><h1>Minhas peças</h1><p class="note">${pl(all.length,"peça","peças")}. As favoritas aparecem primeiro.</p></div>
       <div class="hub-tools"><input type="search" id="hubQ" placeholder="Buscar uma peça" value="${esc(S.q)}" aria-label="Buscar uma peça" autocomplete="off">
       <label class="sortbox"><span class="hide-sm">Ordenar</span><select id="hubSort" aria-label="Ordenar as peças"><option value="recentes" ${S.sort==="recentes"?"selected":""}>Editadas por último</option><option value="nome" ${S.sort==="nome"?"selected":""}>Nome, de A a Z</option></select></label></div></div>
     <div id="hubF">${hubFilterHTML()}</div>
     <div class="pgrid" id="grid">${gridHTML()}</div></section></main>`;
 }
 function hubFilterHTML(){ return S.q.trim()?`<div class="active-f" style="margin-top:12px"><span>Mostrando peças com “${esc(S.q.trim())}”</span><button class="btn sm ghost" data-a="clearq">Limpar busca</button></div>`:""; }
-function resumeHTML(p){ const pct=progressPct(p);
-  return `<section class="resume" aria-label="Continuar minha peça"><div style="min-width:0"><span class="eyebrow">Continuar minha peça</span><h2>${esc(p.titulo||"Peça sem título")}</h2><p>Você parou em: <b>${esc(whereLabel(p))}</b></p>
-    <div class="r-prog"><div class="pbar" aria-hidden="true"><i style="width:${pct}%"></i></div><span>${pct}% pronta</span></div></div>
-    <button class="btn spot" data-a="open" data-id="${p.id}" style="min-height:52px;font-size:17px;padding:10px 22px;background:var(--spot);color:#2A1D00">Continuar minha peça ${I.next}</button></section>`; }
+function resumeHTML(p){
+  return `<section class="resume" aria-label="Continuar de onde parei"><div style="min-width:0"><span class="eyebrow">Continuar de onde parei</span><h2>${esc(p.titulo||"Peça sem título")}</h2><p style="margin:0">Você estava em: <b>${esc(whereLabel(p))}</b></p></div>
+    <button class="btn spot" data-a="open" data-id="${p.id}" style="min-height:52px;font-size:17px;padding:10px 22px;background:var(--spot);color:#2A1D00">Continuar ${I.next}</button></section>`; }
+
+/* =====================================================================
+   IDEIAS: captura rápida, sem categoria obrigatória
+   Soltas: S.ideas (salvas junto com as peças, no mesmo armazenamento).
+   Ligadas a uma peça: p.ideias [{id,texto,data,sceneId,charId}].
+   ===================================================================== */
+const DRAFT="ribalta.ideia.rascunho";
+const getDraft=()=>{ try{ return localStorage.getItem(DRAFT)||""; }catch(e){ return ""; } };
+const setDraft=v=>{ try{ v?localStorage.setItem(DRAFT,v):localStorage.removeItem(DRAFT); }catch(e){} };
+function allIdeas(){ const out=S.ideas.map(x=>({x,p:null})); Object.values(S.plays).forEach(p=>(p.ideias||[]).forEach(x=>out.push({x,p}))); return out.sort((a,b)=>(b.x.data||0)-(a.x.data||0)); }
+function findIdea(id){ let k=S.ideas.findIndex(x=>x.id===id); if(k>=0) return {x:S.ideas[k],arr:S.ideas,p:null};
+  for(const p of Object.values(S.plays)){ k=(p.ideias||[]).findIndex(x=>x.id===id); if(k>=0) return {x:p.ideias[k],arr:p.ideias,p}; } return null; }
+function ideaWhere(o){ if(!o.p) return "Ideia solta"; const p=o.p, s=o.x.sceneId&&sceneById(p,o.x.sceneId), c=o.x.charId&&p.personagens.find(c=>c.id===o.x.charId);
+  return [p.titulo||"Peça sem título",s?`Cena ${s.n}`:"",c?c.nome:""].filter(Boolean).join(" · "); }
+function saveIdea(texto,playId){ const t=String(texto||"").trim(); if(!t) return null;
+  const p=playId&&S.plays[playId], arr=p?p.ideias:S.ideas;
+  if(arr.some(x=>x.texto.trim()===t&&Date.now()-(x.data||0)<120000)) return null; /* evita duplicar o mesmo toque */
+  const x={id:uid(),texto:t,data:Date.now(),sceneId:"",charId:""}; arr.unshift(x);
+  if(p){ pending.add(p.id); p.updatedAt=Date.now(); flush(); } else saveLocal(); return x; }
+function moveIdea(id,playId,sceneId,charId){ const o=findIdea(id); if(!o) return; o.arr.splice(o.arr.indexOf(o.x),1);
+  const p=playId&&S.plays[playId]; o.x.sceneId=p?sceneId||"":""; o.x.charId=p?charId||"":""; (p?p.ideias:S.ideas).unshift(o.x);
+  [o.p,p].forEach(q=>{ if(q){ pending.add(q.id); } }); flush(); }
+const ideaUndo={last:null};
+function captureHTML(){ const p=S.view==="edit"?cur():null, rec=allIdeas().slice(0,3);
+  return sheetWrap("Anotar ideia",`<span class="eyebrow">Captura rápida</span><h2>Anotar ideia</h2>`,`
+    <p class="note" style="margin:0">Escreva ou use o microfone do teclado. Não precisa organizar agora.</p>
+    <textarea class="in" id="capIn" rows="4" placeholder="Ex.: a ovelha podia cantar no final" aria-label="Sua ideia">${esc(getDraft())}</textarea>
+    <div class="row"><button class="btn primary" data-a="capsave" data-k="${p?p.id:""}">Guardar ideia</button>${p?`<button class="btn ghost" data-a="capsave" data-k="">Guardar como ideia solta</button>`:""}</div>
+    <span class="note">${p?`Vai para a peça <b>${esc(p.titulo||"Peça sem título")}</b>. Dá para mudar depois.`:"Fica como ideia solta. Depois você liga a uma peça, se quiser."}</span>
+    ${rec.length?`<div style="display:grid;gap:6px"><span class="eyebrow">Últimas ideias</span>${rec.map(o=>`<div class="idea"><p>${esc(o.x.texto)}<br><span class="note">${esc(ideaWhere(o))}</span></p></div>`).join("")}</div>`:""}
+    <button class="btn ghost" data-a="ideasview">Ver todas as ideias ${I.next}</button>`); }
+function openCapture(){ navLayer(); $("#layer").innerHTML=captureHTML(); autosizeAll(); setTimeout(()=>{ const t=$("#capIn"); if(t){ t.focus(); t.setSelectionRange(t.value.length,t.value.length); } },60); }
+function ideasHTML(){
+  const list=allIdeas(), f=S.ideaF||"todas", soltas=list.filter(o=>!o.p).length;
+  const shown=f==="soltas"?list.filter(o=>!o.p):list;
+  const plays=Object.values(S.plays).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const item=o=>{ const x=o.x, lk=S.linking===x.id, lp=lk&&S.plays[S.linkPlay||""];
+    return `<article class="idea-card" data-iid="${x.id}"><textarea class="in" data-idea="${x.id}" rows="2" aria-label="Texto da ideia">${esc(x.texto)}</textarea>
+      <div class="row"><span class="pill ${o.p?"brand":""}">${esc(ideaWhere(o))}</span>${x.data?`<span class="note">${new Date(x.data).toLocaleDateString("pt-BR",{day:"numeric",month:"short"})}</span>`:""}<span class="spacer"></span>
+        <button class="btn sm" data-a="idealink" data-id="${x.id}" aria-expanded="${lk}">${o.p?"Mudar ligação":"Ligar a uma peça"}</button>${o.p?"":`<button class="btn sm ghost" data-a="ideanew" data-id="${x.id}">Virar peça nova</button>`}<button class="btn sm icon ghost danger" data-a="ideadel" data-id="${x.id}" aria-label="Apagar ideia" title="Apagar">${I.trash}</button></div>
+      ${lk?`<div class="card" style="background:var(--bg)"><div class="grid2"><label class="f">Peça<select data-ilink="play"><option value="">Nenhuma (ideia solta)</option>${plays.map(q=>`<option value="${q.id}" ${S.linkPlay===q.id?"selected":""}>${esc(q.titulo||"Peça sem título")}</option>`).join("")}</select></label>
+        ${lp?`<label class="f">Cena <span class="h">opcional</span><select data-ilink="scene"><option value="">Nenhuma</option>${named(lp).map(s2=>`<option value="${s2.el.id}" ${x.sceneId===s2.el.id&&o.p===lp?"selected":""}>Cena ${s2.n} · ${esc(s2.el.x)}</option>`).join("")}</select></label>
+        <label class="f">Personagem <span class="h">opcional</span><select data-ilink="char"><option value="">Nenhum</option>${lp.personagens.map(c=>`<option value="${c.id}" ${x.charId===c.id&&o.p===lp?"selected":""}>${esc(c.nome)}</option>`).join("")}</select></label>`:""}</div>
+        <div class="row"><button class="btn sm primary" data-a="ideaok" data-id="${x.id}">Salvar ligação</button><button class="btn sm ghost" data-a="idealink" data-id="${x.id}">Cancelar</button></div></div>`:""}</article>`; };
+  return hubHeader(true)+`<main class="newp"><span class="eyebrow">Ideias</span><h1>Minhas ideias</h1>
+    <div class="card"><label class="f">Anotar uma ideia<textarea class="in" id="capIn" rows="2" placeholder="Escreva ou use o microfone do teclado" >${esc(getDraft())}</textarea></label><div class="row"><button class="btn primary" data-a="capsave" data-k="">Guardar ideia</button></div></div>
+    ${list.length&&soltas&&soltas<list.length?`<div class="seg" role="tablist" aria-label="Quais ideias mostrar"><button role="tab" class="${f!=="soltas"?"on":""}" aria-selected="${f!=="soltas"}" data-a="ideaf" data-k="todas">Todas (${list.length})</button><button role="tab" class="${f==="soltas"?"on":""}" aria-selected="${f==="soltas"}" data-a="ideaf" data-k="soltas">Só as soltas (${soltas})</button></div>`:""}
+    ${shown.length?`<div class="ideas">${shown.map(item).join("")}</div>`:list.length?`<div class="empty">Nenhuma ideia solta. Todas já estão ligadas a uma peça.<button class="btn" data-a="ideaf" data-k="todas">Mostrar todas</button></div>`:`<div class="empty">Nenhuma ideia guardada ainda. Escreva a primeira aqui em cima.</div>`}</main>`;
+}
+function ideasFor(p,kind,id){ return (p.ideias||[]).filter(x=>kind==="scene"?x.sceneId===id:x.charId===id); }
+function ideasBlock(p,kind,id){ const l=ideasFor(p,kind,id); return l.length?`<div style="display:grid;gap:6px"><span class="eyebrow">${I.bulb} Ideias ligadas</span>${l.map(x=>`<div class="idea"><p>${esc(x.texto)}</p></div>`).join("")}</div>`:""; }
 function gridHTML(){
   const q=norm(S.q.trim());
   const list=Object.values(S.plays).filter(p=>!q||[p.titulo,p.sinopse,p.tema,p.dev&&p.dev.ideia].some(v=>norm(v).includes(q)));
@@ -1181,19 +1279,27 @@ function createFromNew(withAI){
    ===================================================================== */
 function openNotes(p){ const out=[]; named(p).forEach(s=>(s.el.notas||[]).forEach(n=>{ if(!n.feito) out.push({s,n}); })); return out; }
 /* uma única recomendação por vez, com acesso direto à tarefa */
-function nextStep(p){
-  const sc=named(p), inf=sc.map(s=>sceneInfo(p,s)), btn=(a,extra="")=>`data-a="${a}" ${extra}`;
-  if(!p.dev.ideia.trim()&&!p.titulo.trim()) return {t:"Escrever a ideia da peça",why:"Uma frase basta. Ela orienta todo o resto.",l:"Escrever a ideia",a:btn("fix",'data-k="ideia"')};
-  if(!sc.length) return {t:"Criar as cenas",why:"Divida a história em partes. Três cenas costumam bastar para uma peça curta.",l:"Abrir o quadro de cenas",a:btn("tab",'data-k="cenas"')};
-  const k=inf.findIndex(i=>!i.written); if(k>=0) return {t:`Escrever a cena ${sc[k].n}${sc[k].el.x?" — "+sc[k].el.x:""}`,why:k?`${k} de ${sc.length} cenas já têm falas. Siga uma de cada vez.`:"Escreva o nome de quem fala, Enter, e a fala.",l:"Escrever agora",a:btn("fix",`data-k="escrever" data-id="${sc[k].el.id}"`)};
-  const semA=p.personagens.filter(c=>!c.ator.trim()&&charScenes(p,c).length); if(semA.length) return {t:"Definir quem interpreta cada personagem",why:`${pl(semA.length,"personagem ainda está","personagens ainda estão")} sem ator: ${semA.slice(0,3).map(c=>c.nome).join(", ")}${semA.length>3?"…":""}.`,l:"Definir o elenco",a:btn("fix",'data-k="elenco"')};
-  const ne=sc.find(s=>s.el.status!=="ok"); if(ne) return {t:`Ensaiar a cena ${ne.n}${ne.el.x?" — "+ne.el.x:""}`,why:`${sc.filter(s=>s.el.status==="ok").length} de ${sc.length} cenas ensaiadas.`,l:"Abrir no ensaio",a:btn("fix",`data-k="ensaiar" data-id="${ne.el.id}"`)};
-  const semF=p.personagens.filter(c=>!c.figurino.trim()&&charScenes(p,c).length); if(semF.length) return {t:"Anotar os figurinos",why:`${pl(semF.length,"personagem sem figurino","personagens sem figurino")}. Mesmo algo simples ajuda a separar tudo antes.`,l:"Preencher figurinos",a:btn("fix",'data-k="figurino"')};
-  const semL=sc.filter(s=>!p.lighting.cues.some(c=>c.sceneId===s.el.id)); if(semL.length) return {t:"Planejar a luz das cenas",why:`${pl(semL.length,"cena ainda não tem","cenas ainda não têm")} mudança de luz anotada.`,l:"Planejar a iluminação",a:btn("fix",'data-k="luz"')};
-  return {ok:true,t:"Tudo pronto para imprimir e apresentar",why:"Gere o roteiro, as falas de cada ator e a ficha do operador de luz.",l:"Abrir os documentos",a:btn("tab",'data-k="documentos"')};
+/* sugestões (nunca obrigatórias): a primeira que não foi dispensada aparece */
+function nextSteps(p){
+  const sc=named(p), inf=sc.map(s=>sceneInfo(p,s)), btn=(a,extra="")=>`data-a="${a}" ${extra}`, out=[];
+  if(!p.dev.ideia.trim()&&!p.titulo.trim()) out.push({k:"ideia",t:"Escrever a ideia da peça",why:"Uma frase basta. Ela orienta todo o resto.",l:"Escrever a ideia",a:btn("fix",'data-k="ideia"')});
+  if(!sc.length) out.push({k:"cenas",t:"Criar as cenas",why:"Divida a história em partes. Três cenas costumam bastar para uma peça curta.",l:"Abrir o quadro de cenas",a:btn("tab",'data-k="cenas"')});
+  const k=inf.findIndex(i=>!i.written); if(k>=0) out.push({k:"esc",t:`Escrever a cena ${sc[k].n}${sc[k].el.x?" — "+sc[k].el.x:""}`,why:k?`${k} de ${sc.length} cenas já têm falas.`:"Escreva o nome de quem fala, Enter, e a fala.",l:"Escrever agora",a:btn("fix",`data-k="escrever" data-id="${sc[k].el.id}"`)});
+  const semA=p.personagens.filter(c=>!c.ator.trim()&&charScenes(p,c).length); if(semA.length) out.push({k:"ator",t:"Definir quem interpreta cada personagem",why:`${pl(semA.length,"personagem ainda está","personagens ainda estão")} sem ator: ${semA.slice(0,3).map(c=>c.nome).join(", ")}${semA.length>3?"…":""}.`,l:"Definir o elenco",a:btn("fix",'data-k="elenco"')});
+  const ne=sc.find(s=>s.el.status!=="ok"); if(ne) out.push({k:"ens",t:`Ensaiar a cena ${ne.n}${ne.el.x?" — "+ne.el.x:""}`,why:`${sc.filter(s=>s.el.status==="ok").length} de ${sc.length} cenas ensaiadas.`,l:"Abrir no ensaio",a:btn("fix",`data-k="ensaiar" data-id="${ne.el.id}"`)});
+  const md=sc.reduce((a,s,i)=>a+inf[i].musNoDur,0); if(md) out.push({k:"mus",t:"Cadastrar a duração das músicas",why:`${pl(md,"música ainda conta","músicas ainda contam")} 1 minuto no tempo da peça.`,l:"Abrir as músicas",a:btn("luzgo",'data-k="som"')});
+  const semF=p.personagens.filter(c=>!c.figurino.trim()&&charScenes(p,c).length); if(semF.length) out.push({k:"fig",t:"Anotar os figurinos",why:`${pl(semF.length,"personagem sem figurino","personagens sem figurino")}. Mesmo algo simples ajuda.`,l:"Preencher figurinos",a:btn("fix",'data-k="figurino"')});
+  const semL=sc.filter(s=>!p.lighting.cues.some(c=>c.sceneId===s.el.id)); if(semL.length) out.push({k:"luz",t:"Planejar a luz das cenas",why:`${pl(semL.length,"cena ainda não tem","cenas ainda não têm")} mudança de luz anotada.`,l:"Anotar mudança de luz",a:btn("fix",'data-k="luz"')});
+  out.push({k:"docs",ok:!out.length,t:out.length?"Imprimir o que já está pronto":"Tudo pronto para imprimir e apresentar",why:"Roteiro, falas de cada ator e as fichas de luz e som.",l:"Abrir os documentos",a:btn("tab",'data-k="documentos"')});
+  return out;
 }
-function nextHTML(p){ const n=nextStep(p);
-  return `<div class="nextstep ${n.ok?"ok":""}"><div style="min-width:0"><span class="eyebrow">${n.ok?"Próximo passo":"Próximo passo sugerido"}</span><b>${esc(n.t)}</b><p>${esc(n.why)}</p></div><button class="btn primary" ${n.a}>${esc(n.l)} ${I.next}</button></div>`; }
+function nextStep(p){ const sk=S.skip[p.id]||[]; return nextSteps(p).find(x=>!sk.includes(x.k))||null; }
+const AREAS_GO=[["historia","História"],["personagens","Personagens"],["cenas","Cenas"],["roteiro","Roteiro"],["ensaio","Ensaio"],["producao","Produção"],["luz","Iluminação"],["documentos","Documentos"]];
+function nextHTML(p){ const n=nextStep(p), open=S.open["nx-areas"];
+  const areas=`<div class="chips" style="grid-column:1/-1">${AREAS_GO.map(([k,l])=>k==="luz"?`<button class="chip" data-a="luzgo" data-k="luz">${l}</button>`:`<button class="chip" data-a="tab" data-k="${k}">${l}</button>`).join("")}</div>`;
+  if(!n) return `<div class="nextstep"><div style="min-width:0"><span class="eyebrow">Sugestões</span><b>Sem sugestões agora</b><p>Escolha por onde quer continuar.</p></div><button class="btn sm ghost" data-a="nxreset">Mostrar sugestões de novo</button>${areas}</div>`;
+  return `<div class="nextstep ${n.ok?"ok":""}"><div style="min-width:0"><span class="eyebrow">Sugestão</span><b>${esc(n.t)}</b><p>${esc(n.why)}</p></div><button class="btn primary" ${n.a}>${esc(n.l)} ${I.next}</button>
+    <div class="row" style="grid-column:1/-1;gap:4px"><button class="btn sm ghost" data-a="nxskip" data-k="${n.k}">Agora não</button><button class="btn sm ghost" data-a="nxareas" aria-expanded="${!!open}">Escolher outra área ${open?I.up:I.down}</button></div>${open?areas:""}</div>`; }
 function geralHTML(p){
   const st=stageStates(p), pct=progressPct(p), sc=named(p), d=durState(p), pend=openNotes(p).length;
   const done=st.filter(x=>x.st==="done").length;
@@ -1315,12 +1421,14 @@ function fillOf(p,list){ return [list.filter(([f])=>String(getPath(p,f)||"").tri
 function fillHTML(key,[n,t]){ return `<span class="fill" data-fill="${key}" aria-label="${n} de ${t} preenchidos"><i aria-hidden="true">${Array.from({length:t},(_,k)=>`<u class="${k<n?"on":""}"></u>`).join("")}</i>${n}/${t}</span>`; }
 function totalFill(p){ const n=[H_IDEIA,H_HIST,H_ESTR].map(l=>fillOf(p,l)); const a=n.reduce((x,y)=>x+y[0],0), b=n.reduce((x,y)=>x+y[1],0); return `<div class="fill-total"><b>História ${a}/${b} preenchida</b><div class="pbar" aria-hidden="true"><i style="width:${Math.round(a/b*100)}%"></i></div></div>`; }
 function refreshFill(p){ [["ideia",H_IDEIA],["hist",H_HIST],["estr",H_ESTR]].forEach(([k,l])=>{ const el=$(`[data-fill="${k}"]`); if(el) el.outerHTML=fillHTML(k,fillOf(p,l)); }); const t=$("[data-fill-total]"); if(t) t.innerHTML=totalFill(p); }
+/* primeiro campo vazio, na ordem em que a história costuma ser pensada */
+function histNext(p){ const order=["dev.ideia","tema","publico","dev.protagonista","dev.conflito","sinopse",...H_ESTR.map(x=>x[0])]; return order.find(f=>!String(getPath(p,f)||"").trim()); }
 function historiaHTML(p){
   const prompt=([f,t,h,ph],big)=>`<label class="prompt ${big?"big-idea":""}"><b>${t}</b><span class="note">${h}</span><textarea class="in" data-f="${f}" rows="2" placeholder="${esc(ph||"")}">${esc(getPath(p,f))}</textarea></label>`;
   const sc=named(p).length, filled=f=>String(getPath(p,f)||"").trim();
   const H2=H_HIST.filter(([f])=>f==="dev.protagonista"||f==="dev.conflito"), H2m=H_HIST.filter(x=>!H2.includes(x));
   return `<section class="panel"><div class="panel-head"><div><span class="eyebrow">${eyebrowOf("historia")}</span><h2>A história da peça</h2><p>Preencha o que já souber. Nada é obrigatório, e dá para parar e continuar depois.</p></div>
-    <div style="display:grid;gap:10px;justify-items:end"><div data-fill-total>${totalFill(p)}</div>${sample?`<button class="btn spot" data-a="develop">${I.spark}Desenvolver a partir da ideia</button>`:""}</div></div></section>
+    <div style="display:grid;gap:10px;justify-items:end"><div data-fill-total>${totalFill(p)}</div><button class="btn primary" data-a="histnext">${I.pen}${histNext(p)?"Continuar escrevendo":"Ver as cenas"}</button>${sample?`<button class="btn sm spot" data-a="develop">${I.spark}Desenvolver a partir da ideia</button>`:""}</div></div></section>
   <section class="panel"><div class="hhead"><div><span class="eyebrow">Parte 1</span><h3>A ideia</h3></div>${fillHTML("ideia",fillOf(p,H_IDEIA))}</div>
     ${prompt(H_IDEIA[0],true)}<div class="story-grid">${H_IDEIA.slice(1,3).map(x=>prompt(x)).join("")}</div>
     <details class="more-d" ${ko("h-det",!!(p.titulo||p.duracao||p.ocasiao||filled("dev.objetivo")))}><summary>Título, duração, elenco e ocasião <small>opcional</small></summary><div class="grid2" style="margin-top:6px">
@@ -1371,6 +1479,7 @@ function personagensHTML(p){
     <div class="tiles"><div class="tile"><span>Cenas</span><b>${cs.length}</b></div><div class="tile"><span>Falas</span><b>${lineCount(p,sel)}</b></div><div class="tile"><span>Tempo em cena</span><b>${fmtLong(tm.inScene)}</b><span class="note">falando ≈ ${fmtLong(tm.speak)}</span></div></div>
     <div><span class="eyebrow">Cenas em que aparece</span><div class="chips" style="margin-top:6px">${cs.length?cs.map(o=>`<button class="chip" data-a="gotoscene" data-id="${o.s.el.id}">Cena ${o.s.n} · ${esc(o.s.el.x||"")} <span class="note">${pl(o.lines,"fala","falas")}</span></button>`).join(""):`<span class="note">Ainda não aparece em nenhuma cena.</span>`}</div>
     ${ee.length?`<p class="note" style="margin:8px 0 0">Entra na cena ${ee.filter(e=>e.entra).map(e=>e.s.n).join(", ")} · sai na cena ${ee.filter(e=>e.sai).map(e=>e.s.n).join(", ")}</p>`:""}</div>
+    ${ideasBlock(p,"char",sel.id)}
     <details class="more-d" ${ko("c-prod",prod)}><summary>Figurino e objetos <small>para a produção</small></summary><div class="grid2" style="margin-top:6px">${fld(`personagens.${i}.figurino`,"Figurino",sel.figurino,"",true,"Ex.: túnica marrom e cajado")}${fld(`personagens.${i}.objetos`,"Objetos que usa",sel.objetos,"Separe por vírgula",true)}</div></details>
     <details class="more-d" ${ko("c-mais",extra)}><summary>Mais sobre o personagem <small>objetivo, personalidade, idade, relações</small></summary><div style="display:grid;gap:12px;margin-top:6px">
       <div class="grid2">${fld(`personagens.${i}.objetivo`,"O que ele quer",sel.objetivo,"",true)}${fld(`personagens.${i}.personalidade`,"Personalidade",sel.personalidade,"",true,"Ex.: corajosa, distraída")}</div>
@@ -1392,7 +1501,7 @@ function scardHTML(p,s){
     <button class="sc-body" data-a="opensc" data-id="${id}" aria-label="Abrir a ficha da cena ${s.n}"><h4>${esc(s.el.x||"Cena sem nome")}</h4>${s.el.local?`<span class="loc">${esc(s.el.local)}</span>`:""}
       <p class="res ${s.el.note?"":"ph"}">${esc(s.el.note||"Toque para contar o que acontece nesta cena.")}</p>
       <span class="who">${I.users}<span>${inf.chars.length?esc(inf.chars.join(", ")):"Ninguém em cena ainda"}</span></span></button>
-    <div class="sc-foot"><span class="pill" title="${inf.written?"Estimada pelo texto":inf.planned?"Duração planejada":"Estimativa"}">${I.clock}${fmt(inf.secs)}</span>
+    <div class="sc-foot"><span class="pill" title="${inf.planned?`Duração planejada (pelo texto: ${fmt(inf.est)})`:inf.written?"Estimada pelo texto":"Estimativa"}">${I.clock}${fmt(inf.secs)}${inf.planned?" plan.":""}</span>
       <span class="pill ${inf.written?"ok":""}">${inf.written?pl(inf.falas,"fala","falas"):"A escrever"}</span>${np?`<span class="pill warn" title="Pendências do ensaio">⚑ ${np}</span>`:""}${nc?`<span class="pill spot" title="Mudanças de luz">${I.bulb}${pl(nc,"luz","luzes")}</span>`:""}</div>
     <div class="sc-acts"><button class="btn sm" data-a="gotoscene" data-id="${id}">${I.pen}${inf.written?"Escrever":"Começar a escrever"}</button><span class="spacer"></span>
       <button class="star" data-a="scmenu" data-id="${id}" aria-label="Mais ações da cena ${s.n}" aria-expanded="${S.scMenu===id}" title="Mais ações">${I.more}</button></div>
@@ -1431,11 +1540,12 @@ function openSceneSheet(id){
     ${fld(`el:${id}:x`,"Nome da cena",e.x,"É o título que aparece no roteiro")}
     ${fld(`el:${id}:local`,"Local",e.local,"Sai embaixo do título, no roteiro","","Ex.: Casa do João, à noite")}
     ${fld(`el:${id}:note`,"Resumo",e.note,"O que acontece. Não sai na impressão do roteiro.",true)}
-    <div class="grid2">${fld(`el:${id}:dur`,"Duração planejada (min)",e.dur||"",`Pelo texto: ${fmt(inf.est)}`,false,"Ex.: 2,5","number")}
+    <div class="grid2">${fld(`el:${id}:dur`,"Duração planejada (min)",e.dur||"",`Se preenchida, vale no lugar da estimativa. Pelo texto: ${fmt(inf.est)}${inf.musNoDur?` (${pl(inf.musNoDur,"música sem duração","músicas sem duração")})`:""}`,false,"Ex.: 2,5","number")}
     ${p.usaAtos?`<label class="f">Ato<select data-f="el:${id}:ato" data-num="1">${Array.from({length:maxAct(p)+1},(_,k)=>k+1).map(a=>`<option value="${a}" ${+e.ato===a?"selected":""}>Ato ${a}</option>`).join("")}</select></label>`:""}</div>
     <div style="display:grid;gap:6px"><b style="font-size:14px">Personagens em cena</b><span class="note">Quem fala é marcado sozinho. Marque também quem está em cena sem falar.</span>
       <div class="chips">${p.personagens.map(c=>{ const speaks=inf.speakers.some(n=>norm(n)===norm(c.nome)); const on=speaks||e.extra.some(n=>norm(n)===norm(c.nome));
         return `<label class="chip" style="${on?`border-color:${c.cor}`:""}"><input type="checkbox" data-a="scextra" data-id="${id}" data-n="${esc(c.nome)}" ${on?"checked":""} ${speaks?"disabled":""}><span class="dot" style="background:${c.cor}"></span>${esc(c.nome)}${speaks?' <span class="note">fala</span>':""}</label>`; }).join("")||'<span class="note">Crie personagens primeiro.</span>'}</div></div>
+    ${ideasBlock(p,"scene",id)}
     <div style="display:grid;gap:6px"><b style="font-size:14px">Ensaio</b><div class="seg">${Object.entries(STATUS).map(([k,v])=>`<button class="${e.status===k?"on":""}" data-a="scstatus" data-id="${id}" data-k="${k}">${stIcon(k)} ${v.l}</button>`).join("")}</div></div>
     <details class="more-d" ${ko("sh-prod",!!(p.lighting.cues.some(c=>c.sceneId===id)||e.cenario||e.objetos||e.som))}><summary>Produção desta cena <small>luz, cenário, objetos e som</small></summary><div style="display:grid;gap:14px;margin-top:6px">
     ${(()=>{ const ncs=p.lighting.cues.filter(c=>c.sceneId===id).length, nsn=soundList(p).filter(x=>x.s.el===e).length;
@@ -1487,7 +1597,8 @@ function renderBar(){
 function elHTML(p,e,n){
   const c = (e.t==="personagem") ? charByName(p,e.x) : (e.t==="fala"||e.t==="parentese") ? charByName(p,speakerOf(p,p.els.indexOf(e))) : null;
   const pre = e.t==="cena"?`<span class="sn">Cena ${n} —</span>`:e.t==="musica"?`<span class="pre">MÚSICA:</span>`:e.t==="parentese"?`<span class="pp">(</span>`:"";
-  const post= e.t==="parentese"?`<span class="pp">)</span>`:"";
+  let post= e.t==="parentese"?`<span class="pp">)</span>`:"";
+  if(e.t==="musica"&&p.musicas){ const m=musOf(p,e); if(m){ const sec=musSecs(m); post=`<button class="mdur ${m.tipo!=="fundo"&&!sec?"warn":""}" data-a="musopen" data-id="${m.id}" title="Duração e link da música">♪ ${m.tipo==="fundo"?"fundo":sec?fmt(sec):"duração?"}</button>`; } }
   return `<div class="el el-${e.t}" data-wrap="${e.id}" style="${c?`--cc:${c.cor}`:""}"><span class="tag">${T[e.t].l}</span>${pre}<textarea rows="1" data-el="${e.id}" placeholder="${esc(T[e.t].ph)}" aria-label="${T[e.t].l}" spellcheck="true" autocomplete="off">${esc(e.x)}</textarea>${post}</div>${e.t==="cena"&&e.local?`<div class="scene-loc">${esc(e.local)}</div>`:""}`;
 }
 function renderPage(focusId,caret){
@@ -1533,6 +1644,7 @@ let AC={id:null,items:[],i:0};
 function acItems(p,e){
   const q=norm(e.x);
   if(e.t==="personagem"){ if(!q) return []; return p.personagens.filter(c=>norm(c.nome)!==q && norm(c.nome).includes(q)).sort((a,b)=>(norm(b.nome).startsWith(q)?1:0)-(norm(a.nome).startsWith(q)?1:0)).slice(0,6).map(c=>({v:c.nome,cor:c.cor,n:pl(lineCount(p,c),"fala","falas")})); }
+  if(e.t==="musica"){ if(!q||!p.musicas) return []; return p.musicas.filter(m=>norm(m.nome)!==norm(musName(e.x))&&norm(m.nome).includes(q)).slice(0,6).map(m=>({v:m.nome,mid:m.id,n:m.tipo==="fundo"?"fundo":musSecs(m)?fmt(musSecs(m)):"sem duração"})); }
   if(e.t==="cena"){ if(q.length<2) return []; const seen=new Set(); const out=[]; named(p).forEach(s=>{ [s.el.x,s.el.local].forEach(v=>{ if(v&&s.el!==e&&norm(v)!==q&&norm(v).includes(q)&&!seen.has(norm(v))){ seen.add(norm(v)); out.push({v,n:"já usado"}); } }); }); return out.slice(0,5); }
   return [];
 }
@@ -1548,7 +1660,7 @@ function showAC(p,e){
 function hideAC(){ $$(".ac").forEach(x=>x.remove()); AC={id:null,items:[],i:0}; }
 function acceptAC(p,k){
   const e=p.els.find(x=>x.id===AC.id); const it=AC.items[k]; hideAC(); if(!e||!it) return;
-  e.x=it.v; const idx=p.els.indexOf(e);
+  e.x=it.v; if(it.mid) e.mid=it.mid; const idx=p.els.indexOf(e);
   if(e.t==="personagem"){ let ne=p.els[idx+1]; if(!ne||(ne.t!=="fala"&&ne.t!=="parentese")||ne.x.trim()) ne=insertAfter(p,idx,"fala"); touch(p); renderPage(ne.id,"end"); }
   else { touch(p); renderPage(e.id,"end"); }
   renderBar(); sideLater();
@@ -1616,7 +1728,7 @@ function propsIndex(p){
 }
 function producaoHTML(p){
   const sc=named(p); const t=S.ptab;
-  const tabs=[["lista","O que precisamos"],["elenco","Elenco"],["figurino","Figurino"],["cenario","Cenário"],["objetos","Objetos"],["som","Som"],["luz","Iluminação"]];
+  const tabs=[["lista","O que precisamos"],["elenco","Elenco"],["figurino","Figurino"],["cenario","Cenário"],["objetos","Objetos"],["som","Músicas e sons"],["luz","Iluminação"]];
   const tabsMais=[["necessidades","Necessidades por cena"],["matriz","Quem está em cada cena"],["mtec","Matriz técnica"],["tecnica","Observações técnicas"]];
   let body="";
   if(t==="lista"){ const N=needs(p), all=N.flatMap(g=>g.items), done=all.filter(x=>p.check[x.key]).length;
@@ -1640,8 +1752,14 @@ function producaoHTML(p){
     ${fld("producao.objetos","Outros objetos (uso geral)",p.producao.objetos,"Um por linha",true)}
     <div class="sec-title"><h3>Em quais cenas cada objeto aparece?</h3>${sample?`<button class="btn sm spot" data-a="askai" data-q="Quais objetos precisamos para apresentar essa peça? Leia o roteiro e as cenas e liste o que falta cadastrar em cada cena.">${I.spark}Achar objetos no roteiro</button>`:""}</div>
     ${ix.length?`<div class="tbl"><table><tr><th>Objeto</th><th>Cenas</th><th>Quem usa</th></tr>${ix.map(o=>`<tr><td>${esc(o.nome)}</td><td>${o.cenas.length?o.cenas.join(", "):o.geral?"geral":"—"}</td><td>${esc((o.quem||[]).join(", "))||"—"}</td></tr>`).join("")}</table></div>`:`<span class="note">Nenhum objeto cadastrado ainda.</span>`}`; }
-  if(t==="som") body=`${sc.length?`<div class="tbl"><table><tr><th>Cena</th><th>No roteiro</th><th>Músicas e efeitos (um por linha)</th></tr>${sc.map(s=>{ const mus=sceneInfo(p,s).els.filter(e=>e.t==="musica").map(e=>e.x); return `<tr><td><b>${s.n}</b> ${esc(s.el.x)}</td><td class="note">${mus.map(esc).join("<br>")||"—"}</td><td><textarea class="in" data-f="el:${s.el.id}:som" rows="1" aria-label="Som da cena ${s.n}">${esc(s.el.som)}</textarea></td></tr>`; }).join("")}</table></div>`:""}
-    ${fld("producao.som","Som geral",p.producao.som,"Um por linha: abertura, encerramento, vinhetas",true)}`;
+  if(t==="som"){ const ms=p.musicas, outrosN=sc.filter(x=>x.el.som.trim()).length+(p.producao.som.trim()?1:0);
+    body=`<div class="sec-title"><div><h3>Músicas da peça</h3><p class="note" style="margin:2px 0 0">Cadastre uma vez: nome, duração e link. O tempo das cenas usa a duração daqui.</p></div><button class="btn primary" data-a="musadd">${I.plus}Nova música</button></div>
+    ${ms.length?`<div class="board">${ms.map(m=>{ const us=musUses(p,m), sec=musSecs(m), tp=(MUS_TIPOS.find(x=>x[0]===m.tipo)||[])[1];
+      return `<button class="lrowf" data-a="musopen" data-id="${m.id}"><span class="swc" style="background:${m.tipo==="fundo"?"var(--canvas)":"var(--spot)"}"></span><span style="min-width:0"><b>${esc(m.nome||"Música sem nome")}</b><small>${esc([tp||"Tipo a definir",m.tipo==="fundo"?"não soma tempo":sec?fmt(sec)+(m.fim?" (trecho)":""):"",us.length?(us.length>1?"cenas ":"cena ")+us.join(", "):"fora do roteiro",m.link?"tem link":""].filter(Boolean).join(" · "))}</small>${m.tipo!=="fundo"&&!sec?`<small style="color:var(--warn);font-weight:700">Duração a definir: conta 1 minuto</small>`:""}</span></button>`; }).join("")}</div>`
+      :`<div class="empty"><b style="color:var(--ink)">Nenhuma música cadastrada.</b><span>Quando você escreve uma linha “Música” no roteiro, ela aparece aqui sozinha. Ou cadastre agora.</span></div>`}
+    <details class="more-d" ${ko("som-outros",outrosN>0)}><summary>Outros sons por cena <small>vinhetas, microfones, efeitos fora do roteiro</small></summary><div style="display:grid;gap:12px;margin-top:6px">
+    ${sc.length?`<div class="tbl"><table><tr><th>Cena</th><th>Sons e efeitos (um por linha)</th></tr>${sc.map(s=>`<tr><td><b>${s.n}</b> ${esc(s.el.x)}</td><td><textarea class="in" data-f="el:${s.el.id}:som" rows="1" aria-label="Som da cena ${s.n}">${esc(s.el.som)}</textarea></td></tr>`).join("")}</table></div>`:""}
+    ${fld("producao.som","Som geral",p.producao.som,"Um por linha: abertura, encerramento, vinhetas",true)}</div></details>`; }
   if(t==="matriz"){ const infos=sc.map(s=>sceneInfo(p,s)); body=sc.length&&p.personagens.length?`<p class="note" style="margin:0">Quem está em cada cena. Personagens que nunca estão juntos podem ser feitos pelo mesmo ator.</p>
     <div class="tbl"><table class="matrix"><tr><th>Personagem</th>${sc.map(s=>`<th title="${esc(s.el.x)}">${s.n}</th>`).join("")}<th>Total</th></tr>
     ${p.personagens.map(c=>{ let tot=0; return `<tr><td><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="dot" style="background:${c.cor}"></span>${esc(c.nome)}</span></td>${infos.map(inf=>{ const sp=inf.speakers.some(n=>norm(n)===norm(c.nome)), ex=inf.extra.some(n=>norm(n)===norm(c.nome)); if(sp||ex) tot++; return `<td>${sp?`<span class="mk" style="background:${c.cor}" title="Fala"></span>`:ex?`<span class="mk" style="border:2px solid ${c.cor}" title="Em cena sem falar"></span>`:""}</td>`; }).join("")}<td><b>${tot}</b></td></tr>`; }).join("")}</table></div>
@@ -1649,10 +1767,10 @@ function producaoHTML(p){
     ${pairsHTML(p,infos)}`:`<div class="empty">A matriz aparece quando houver cenas e personagens.</div>`; }
   if(t==="luz") body=luzHTML(p);
   if(t==="mtec") body=mtecHTML(p);
-  if(t==="tecnica") body=fld("producao.observacoes","Observações técnicas",p.producao.observacoes,"Luz, microfones, horários de ensaio, contrarregra",true);
+  if(t==="tecnica") body=fld("producao.observacoes","Observações técnicas",p.producao.observacoes,"Luz, microfones, horários de ensaio, contrarregra",true)+fld("producao.outros","Outras coisas que precisamos",p.producao.outros,"Uma por linha. Aparecem na lista do que precisamos.",true);
   const tb=([k,l])=>`<button role="tab" aria-selected="${t===k}" class="${t===k?"on":""}" data-a="ptab" data-k="${k}">${l}</button>`, inMais=tabsMais.some(([k])=>k===t);
   return `<section class="panel"><div class="panel-head"><div><span class="eyebrow">${eyebrowOf("producao")}</span><h2>Produção</h2><p>Tudo o que a peça precisa para subir ao palco. Comece pela lista do que precisamos.</p></div>
-    ${sample?`<button class="btn sm spot" data-a="aiq" data-k="producao">${I.spark}Sugerir figurino e cenário</button>`:""}</div>
+    <div class="row"><button class="btn primary" data-a="needadd">${I.plus}Anotar algo que precisamos</button>${sample?`<button class="btn sm spot" data-a="aiq" data-k="producao">${I.spark}Sugerir figurino e cenário</button>`:""}</div></div>
   <div class="tabrow"><div class="ptabs main" role="tablist" aria-label="Partes da produção">${tabs.map(tb).join("")}</div>
     <details class="tabmore" ${inMais?"open":ko("p-mais",false)}><summary>${inMais?esc((tabsMais.find(([k])=>k===t)||[])[1]):"Mais opções"} ▾</summary><div class="ptabs" role="tablist" aria-label="Mais opções da produção">${tabsMais.map(tb).join("")}</div></details></div>
   ${t==="luz"?"":lsumHTML(p)}
@@ -1670,7 +1788,8 @@ function needs(p){
   return [{t:"Objetos",tab:"objetos",items:objetos,empty:"Nenhum objeto anotado. Anote na aba Objetos ou na ficha da cena."},
     {t:"Figurinos",tab:"figurino",items:figurinos,empty:"Nenhum personagem em cena ainda."},
     {t:"Cenário",tab:"cenario",items:cenario,empty:"Nenhum cenário anotado."},
-    {t:"Sons e músicas",tab:"som",items:sons,empty:"Nenhuma música ou efeito anotado."}];
+    {t:"Sons e músicas",tab:"som",items:sons,empty:"Nenhuma música ou efeito anotado."},
+    {t:"Outros",tab:"tecnica",items:lines(p.producao.outros).map(x=>({key:"out:"+norm(x),nome:x,det:"geral"})),empty:"Nada mais anotado."}];
 }
 function pairsHTML(p,infos){
   const out=[];
@@ -1797,7 +1916,7 @@ function luzHTML(p){
   const tech=sub!=="cues", subs=[["mapa","Mapa e equipamentos"],["areas","Áreas do palco"],["estados","Luzes prontas (estados)"]];
   const start=empty?`<div class="card" style="background:var(--spot-soft);border-color:var(--spot)"><b style="font-family:var(--f-display);font-size:18px">Comece simples</b>
     <p class="note" style="margin:0">Não precisa entender de iluminação. Para cada mudança de luz, responda: em qual cena, em que momento, em qual parte do palco e qual efeito você quer. A Ribalta planeja e documenta; quem opera a mesa de luz segue a ficha impressa.</p>
-    <div class="row">${sc.length?`<button class="btn primary" data-a="luzadd" data-k="cue" data-scene="${sc[0].el.id}">${I.plus}Anotar a primeira mudança de luz</button>`:""}<button class="btn" data-a="lstarter" data-k="fix">Usar o modelo da igreja (4 PAR + 2 refletores)</button><button class="btn ghost" data-a="lstarter" data-k="basic">Só áreas e luzes prontas</button></div></div>`:"";
+    <div class="row">${sc.length?`<button class="btn primary" data-a="luzadd" data-k="cue" data-scene="${sc[0].el.id}">${I.plus}Anotar mudança de luz</button>`:""}<button class="btn wrap" data-a="lstarter" data-k="fix">Usar o modelo da igreja (4 PAR + 2 refletores)</button><button class="btn ghost wrap" data-a="lstarter" data-k="basic">Só áreas e luzes prontas</button></div></div>`:"";
   let body="";
   if(sub==="cues"){
     const orf=cl.filter(x=>!x.s);
@@ -1819,13 +1938,14 @@ function luzHTML(p){
   if(sub==="estados") body=`<div class="sec-title"><h3>Luzes prontas (estados)</h3><div class="row"><button class="btn sm" data-a="luzadd" data-k="state">${I.plus}Estado</button>${!L.states.length?`<button class="btn sm ghost" data-a="lstarter" data-k="basic">Criar estados básicos</button>`:""}</div></div>
     <p class="note" style="margin:0">Uma luz pronta, como “Geral quente” ou “Noite”. Escolha numa mudança de luz e ela preenche cor, intensidade e transição.</p>
     ${L.states.length?`<div class="board">${L.states.map(x=>`<button class="lrowf" data-a="stateopen" data-id="${x.id}"><span class="swc" style="background:${corHex(x.cor)||"var(--canvas)"}"></span><span style="min-width:0"><b>${esc(x.nome||"Estado sem nome")}</b><small>${esc([x.alvos.map(id=>alvoNome(p,id)).filter(Boolean).join(", "),x.cor,x.int!==""?x.int+"%":"",x.trans].filter(Boolean).join(" · ")||"Toque para definir")} · usado em ${pl(L.cues.filter(c=>c.stateId===x.id).length,"cue","cues")}</small></span></button>`).join("")}</div>`:""}`;
-  return `${start}<div class="row"><div class="seg" role="tablist" aria-label="Iluminação"><button role="tab" aria-selected="${!tech}" class="${!tech?"on":""}" data-a="ltab" data-k="cues">${I.bulb}Mudanças de luz por cena</button><button role="tab" aria-selected="${tech}" class="${tech?"on":""}" data-a="ltab" data-k="${tech?sub:"mapa"}">Ajustes técnicos</button></div><span class="spacer"></span>${sample?`<button class="btn sm spot" data-a="askai" data-q="Analise a iluminação da peça e sugira mudanças de luz (cues) para as cenas sem luz, usando só os equipamentos cadastrados.">${I.spark}Sugerir iluminação</button>`:""}</div>
+  const sid=(p.lastScene&&sc.some(x=>x.el.id===p.lastScene))?p.lastScene:(sc[0]&&sc[0].el.id);
+  return `${start}${!empty&&sc.length?`<div class="row"><button class="btn primary" data-a="luzadd" data-k="cue" data-scene="${sid}">${I.plus}Anotar mudança de luz</button><span class="note">Na cena ${(sc.find(x=>x.el.id===sid)||{}).n}. Dá para trocar a cena na ficha.</span></div>`:""}<div class="row"><div class="seg" role="tablist" aria-label="Iluminação"><button role="tab" aria-selected="${!tech}" class="${!tech?"on":""}" data-a="ltab" data-k="cues">${I.bulb}Mudanças de luz por cena</button><button role="tab" aria-selected="${tech}" class="${tech?"on":""}" data-a="ltab" data-k="${tech?sub:"mapa"}">Ajustes técnicos</button></div><span class="spacer"></span>${sample?`<button class="btn sm spot" data-a="askai" data-q="Analise a iluminação da peça e sugira mudanças de luz (cues) para as cenas sem luz, usando só os equipamentos cadastrados.">${I.spark}Sugerir iluminação</button>`:""}</div>
     ${tech?`<p class="note" style="margin:0">Para quem cuida da técnica: equipamentos, canal e DMX, áreas do palco e luzes prontas. Tudo opcional.</p><div class="seg" role="tablist" aria-label="Ajustes técnicos">${subs.map(([k,l])=>`<button role="tab" aria-selected="${sub===k}" class="${sub===k?"on":""}" data-a="ltab" data-k="${k}">${l}</button>`).join("")}</div>`:""}${body}`;
 }
 function techRows(p){ const out=[], snd=soundList(p);
   named(p).forEach(s=>{ const ev=[]; let last=s.start-.5;
     p.lighting.cues.filter(c=>c.sceneId===s.el.id).forEach(c=>{ const ln=cueLinkEl(p,c); const pos=ln?ln.idx:last+.001; last=pos; ev.push({pos,L:{c,code:cueCode(p,c)},m:c.momento||(ln?lineSnippet(p,ln.idx):"")}); });
-    snd.filter(x=>x.s.el===s.el).forEach(x=>ev.push({pos:x.idx,S:x.code,m:"Música: "+x.e.x}));
+    snd.filter(x=>x.s.el===s.el).forEach(x=>{ const m=musOf(p,x.e); ev.push({pos:x.idx,S:x.code+" "+(m?m.nome:musName(x.e.x)),m:"Música: "+x.e.x}); });
     ev.sort((a,b)=>a.pos-b.pos);
     const rows=[]; ev.forEach(v=>{ const pr=rows[rows.length-1]; if(pr&&Math.abs(pr.pos-v.pos)<1e-9){ if(v.L) pr.luz.push(v.L); if(v.S) pr.som.push(v.S); if(pr.momento==="—"&&v.m) pr.momento=v.m; } else rows.push({pos:v.pos,s,momento:v.m||"—",luz:v.L?[v.L]:[],som:v.S?[v.S]:[]}); });
     if(!rows.length) rows.push({s,momento:"Início da cena",luz:[],som:[]});
@@ -1839,6 +1959,27 @@ function mtecHTML(p){ const rows=techRows(p);
   ${soundList(p).length?`<p class="note" style="margin:0">${soundList(p).map(x=>`${x.code}: ${esc(x.e.x)}`).join(" · ")}</p>`:""}`; }
 function lqHTML(p,e){ const cs=p.lighting.cues.filter(c=>c.elId===e.id&&cueLinkEl(p,c)); return cs.map(c=>`<button class="lq" data-a="cueopen" data-id="${c.id}" title="Cue de luz">${I.bulb}${cueCode(p,c)} · ${esc(cueAcao(p,c)||c.momento||"")}</button>`).join(""); }
 
+/* ---------- ficha da música ---------- */
+function openMusicSheet(id){ const p=cur(); const m=p.musicas.find(x=>x.id===id); if(!m) return; navLayer(); const us=musUses(p,m), sec=musSecs(m), bad=k=>m[k]&&!parseDur(m[k]);
+  const link=/^https?:\/\//i.test(m.link.trim())?m.link.trim():"";
+  $("#layer").innerHTML=sheetWrap("Música",`<span class="eyebrow">Música${us.length?` · ${us.length>1?"cenas":"cena"} ${us.join(", ")}`:""}</span><h2 id="musTitle">${esc(m.nome||"Nova música")}</h2>`,`
+    <label class="f">Nome<input type="text" data-f="M:${id}:nome" value="${esc(m.nome)}" placeholder="Ex.: Noite Feliz"></label>
+    <div style="display:grid;gap:6px"><b style="font-size:14px">Tipo</b><div class="chips">${MUS_TIPOS.map(([k,l])=>`<button class="chip ${m.tipo===k?"on":""}" data-a="mustipo" data-id="${id}" data-k="${k}" aria-pressed="${m.tipo===k}">${l}</button>`).join("")}</div>
+      ${m.tipo==="fundo"?`<span class="note">Toca por baixo de falas ou narração, então não soma no tempo da cena.</span>`:""}</div>
+    <label class="f">Duração<span class="h">minutos:segundos, como 3:40</span><input type="text" inputmode="numeric" data-f="M:${id}:dur" value="${esc(m.dur)}" placeholder="Ex.: 3:40"></label>
+    ${bad("dur")?`<span class="err" style="font-size:14px">Não entendi “${esc(m.dur)}”. Use minutos:segundos, como 3:40.</span>`:""}
+    <details class="more-d" ${ko("mus-trecho",!!(m.ini||m.fim))}><summary>Usar só um trecho <small>${m.ini||m.fim?esc(`de ${m.ini||"0:00"} a ${m.fim||"?"}`):"opcional"}</small></summary><div class="grid2" style="margin-top:6px">
+      <label class="f">Começa em<input type="text" inputmode="numeric" data-f="M:${id}:ini" value="${esc(m.ini)}" placeholder="Ex.: 0:30"></label>
+      <label class="f">Termina em<input type="text" inputmode="numeric" data-f="M:${id}:fim" value="${esc(m.fim)}" placeholder="Ex.: 2:10"></label></div></details>
+    <div class="docsum" id="musConta">${m.tipo==="fundo"?"Não soma no tempo da peça.":sec?`Conta <b>${fmtLong(sec)}</b> no tempo da cena.`:"Sem duração: conta 1 minuto no tempo da cena."}</div>
+    <label class="f">Link<span class="h">YouTube, Spotify ou Drive. Abre em outra aba.</span><input type="url" data-f="M:${id}:link" value="${esc(m.link)}" placeholder="https://…"></label>
+    ${link?`<a class="btn sm" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Abrir o link ${I.next}</a>`:m.link.trim()?`<span class="err" style="font-size:14px">O link precisa começar com https://</span>`:""}
+    <label class="f">Quem canta ou dança<input type="text" data-f="M:${id}:quem" value="${esc(m.quem)}" placeholder="Ex.: Coral de crianças"></label>
+    ${fld(`M:${id}:obs`,"Observação para quem opera o som",m.obs,"",true,"Ex.: baixar o volume quando Maria falar")}
+    <span class="note">${us.length?`No roteiro: ${us.length>1?"cenas":"cena"} ${us.join(", ")}.`:"Ainda não está no roteiro. Escreva uma linha “Música” com este nome."}</span>
+    <div class="row"><button class="btn danger" data-a="musdelask">${I.trash}Excluir</button></div><div class="confirm" id="musdel" hidden>Excluir esta música da lista? As linhas do roteiro continuam, só sem a duração. <button class="btn sm danger" data-a="musdel" data-id="${id}">Excluir</button><button class="btn sm" data-a="musdelno">Cancelar</button></div>`);
+  autosizeAll(); }
+function ensureMusic(p,e){ if(e.t!=="musica"||!e.x.trim()) return null; let m=musOf(p,e); if(!m){ m={id:uid(),nome:musName(e.x),link:"",dur:"",ini:"",fim:"",tipo:musGuess(e.x),quem:"",obs:""}; p.musicas.push(m); } if(e.mid!==m.id) e.mid=m.id; return m; }
 /* ---------- fichas de edição ---------- */
 function sheetWrap(label,head,body){ return `<div class="sheet" data-a="close"><div class="card2" role="dialog" aria-label="${esc(label)}"><div class="sheet-head"><div>${head}</div><button class="btn sm icon ghost" data-a="close" aria-label="Fechar">${I.x}</button></div>${body}</div></div>`; }
 const delBox=(kind,id,txt)=>`<div class="row"><button class="btn danger" data-a="luzdelask">${I.trash}Excluir</button></div><div class="confirm" id="ldel" hidden>${txt} <button class="btn sm danger" data-a="luzdel" data-k="${kind}" data-id="${id}">Excluir</button><button class="btn sm" data-a="luzdelno">Cancelar</button></div>`;
@@ -2053,7 +2194,8 @@ const DOCS=[
   ["ensaio","Plano de ensaio","Quem precisa vir, situação de cada cena e pendências."],
   ["luz","Roteiro de iluminação","Mapa do palco, equipamentos e a luz de cada cena."],
   ["operador","Ficha do operador de luz","As mudanças de luz em ordem, para quem opera a mesa."],
-  ["mtec","Matriz técnica","Luz, som, cenário e objetos em cada momento."]
+  ["mtec","Matriz técnica","Luz, som, cenário e objetos em cada momento."],
+  ["som","Ficha do operador de som","As músicas em ordem, com a deixa, o trecho e o link."]
 ];
 function actorList(p){ const o=S.print; return p.personagens.filter(c=>o.atorSel==="todos"||c.id===o.atorSel); }
 function actorGroups(p){ const m=new Map(); p.personagens.forEach(c=>{ const k=c.ator.trim()?norm(c.ator):"#"+c.id; if(!m.has(k)) m.set(k,{key:k,nome:c.ator.trim(),chars:[]}); m.get(k).chars.push(c); }); return [...m.values()]; }
@@ -2156,11 +2298,15 @@ function printBodyRaw(p){
     out.push(`<section class="pg">${head("Lista de objetos")}${sc.map(s=>lines(s.el.objetos).length?`<h3>Cena ${s.n} — ${esc(s.el.x)}</h3><ul class="chk">${lines(s.el.objetos).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:"").join("")}
       ${lines(p.producao.objetos).length?`<h3>Uso geral</h3><ul class="chk">${lines(p.producao.objetos).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
       <h3>Onde cada objeto aparece</h3>${ix.length?`<table><tr><th>Objeto</th><th>Cenas</th><th>Quem usa</th></tr>${ix.map(x=>`<tr><td>${esc(x.nome)}</td><td>${x.cenas.join(", ")||(x.geral?"geral":"")}</td><td>${esc((x.quem||[]).join(", "))}</td></tr>`).join("")}</table>`:"<p>Nenhum objeto cadastrado.</p>"}</section>`); }
-  if(D.musicas){ const rows=[]; sc.forEach(s=>{ sceneInfo(p,s).els.filter(e=>e.t==="musica").forEach(e=>rows.push([s.n,e.x])); lines(s.el.som).forEach(x=>rows.push([s.n,x])); });
-    out.push(`<section class="pg">${head("Lista de músicas e efeitos")}${rows.length?`<table><tr><th></th><th>Cena</th><th>Música ou efeito</th></tr>${rows.map(r=>`<tr><td style="width:2em">☐</td><td>${r[0]}</td><td>${esc(r[1])}</td></tr>`).join("")}</table>`:"<p>Nenhuma música marcada nas cenas.</p>"}${lines(p.producao.som).length?`<h3>Geral</h3><ul class="chk">${lines(p.producao.som).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}</section>`); }
+  const musTempo=m=>!m?"":m.tipo==="fundo"?"fundo":m.fim?`${m.ini||"0:00"}–${m.fim}`:(musSecs(m)?fmt(musSecs(m)):"");
+  if(D.musicas){ const rows=[]; sc.forEach(s=>{ sceneInfo(p,s).els.filter(e=>e.t==="musica").forEach(e=>rows.push([s.n,e.x,musOf(p,e)])); lines(s.el.som).forEach(x=>rows.push([s.n,x,null])); });
+    out.push(`<section class="pg">${head("Lista de músicas e efeitos")}${rows.length?`<table><tr><th></th><th>Cena</th><th>Música ou efeito</th><th>Tempo</th><th>Link</th></tr>${rows.map(r=>`<tr><td style="width:2em">☐</td><td>${r[0]}</td><td>${esc(r[1])}</td><td>${esc(musTempo(r[2]))}</td><td style="word-break:break-all;font-size:.8em">${esc(r[2]&&r[2].link||"")}</td></tr>`).join("")}</table>`:"<p>Nenhuma música marcada nas cenas.</p>"}${lines(p.producao.som).length?`<h3>Geral</h3><ul class="chk">${lines(p.producao.som).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}</section>`); }
   if(D.cenas) out.push(`<section class="pg">${head("Lista de cenas")}<table><tr><th>#</th>${p.usaAtos?"<th>Ato</th>":""}<th>Cena</th><th>Local</th><th>Quem entra</th><th>Tempo</th></tr>${sc.map(s=>`<tr><td>${s.n}</td>${p.usaAtos?`<td>${s.el.ato}</td>`:""}<td><b>${esc(s.el.x)}</b>${s.el.note?`<br>${esc(s.el.note)}`:""}</td><td>${esc(s.el.local)}</td><td>${esc(inScene(s))}</td><td>${fmt(sceneInfo(p,s).secs)}</td></tr>`).join("")}</table><p><b>DURAÇÃO TOTAL ESTIMADA:</b> ${fmtLong(totalSecs(p))}${metaMin(p)?` · META: ${metaMin(p)} min`:""}</p></section>`);
   if(D.ensaio) out.push(`<section class="pg">${head("Plano de ensaio")}<table><tr><th>Cena</th><th>Situação</th><th>Quem precisa estar</th><th>Pendências</th></tr>${sc.map(s=>{ const inf=sceneInfo(p,s); return `<tr><td>${s.n} — ${esc(s.el.x)}<br>${fmt(inf.secs)}</td><td>${STATUS[s.el.status].i} ${STATUS[s.el.status].l}${s.el.revisar?"<br>⚑ Revisar":""}</td><td>${inf.chars.map(n=>{ const c=charByName(p,n); return esc(n)+(c&&c.ator?` (${esc(c.ator)})`:""); }).join(", ")}</td><td>${(s.el.notas||[]).filter(n=>!n.feito).map(n=>"• "+esc(n.texto)).join("<br>")||"&nbsp;"}</td></tr>`; }).join("")}</table>
     <h3>Próximos ensaios</h3><table><tr><th>Data</th><th>Cenas</th><th>Observações</th></tr>${[1,2,3,4].map(()=>`<tr><td style="height:2.2em">&nbsp;</td><td></td><td></td></tr>`).join("")}</table></section>`);
+  if(D.som){ const snd=soundList(p);
+    out.push(`<section class="pg">${head("Ficha de operação de som")}${snd.length?`<table class="op"><tr><th></th><th>Som</th><th>Cena</th><th>Deixa</th><th>Música</th><th>Tipo</th><th>Tempo</th><th>Link e obs.</th></tr>${snd.map(x=>{ const m=musOf(p,x.e); let k=x.idx-1; while(k>x.s.start&&!String(p.els[k].x).trim()) k--; const dx=k>x.s.start?lineSnippet(p,k):"Início da cena";
+      return `<tr><td>☐</td><td><b>${x.code}</b></td><td>${x.s.n}</td><td>${esc(dx)}</td><td>${esc(m?m.nome:x.e.x)}${m&&m.quem?`<br><i>${esc(m.quem)}</i>`:""}</td><td>${esc(m?((MUS_TIPOS.find(t=>t[0]===m.tipo)||[])[1]||""):"")}</td><td>${esc(musTempo(m))||"a definir"}</td><td style="word-break:break-all;font-size:.85em">${esc(m&&m.link||"")}${m&&m.obs?`<br>${esc(m.obs)}`:""}</td></tr>`; }).join("")}</table>`:"<p>Nenhuma música no roteiro.</p>"}</section>`); }
   out.push(...lightDocs(p,D,head));
   return out.join("")||`<section class="pg"><p>Escolha pelo menos um documento.</p></section>`;
 }
@@ -2239,7 +2385,8 @@ function projectObj(p,full){
       areas:p.lighting.areas.map(a=>({nome:a.nome,posicao:(AREA_POS.find(x=>x[0]===a.pos)||[])[1]||""})),
       estados:p.lighting.states.map(x=>({nome:x.nome,onde:x.alvos.map(id=>alvoNome(p,id)).filter(Boolean),cor:x.cor,intensidade:x.int,transicao:x.trans})),
       cues:cueList(p).map(x=>{ const e=effCue(p,x.c); return {codigo:x.code,cena:x.s?x.s.n:null,momento:x.c.momento,acao:cueAcao(p,x.c),onde:e.alvos.map(id=>alvoNome(p,id)),cor:e.cor,intensidade:e.int,transicao:e.trans}; })},
-      som:soundList(p).map(x=>({codigo:x.code,cena:x.s.n,musica:x.e.x}))}:{})};
+      som:soundList(p).map(x=>({codigo:x.code,cena:x.s.n,musica:x.e.x})),
+      musicas:p.musicas.map(m=>({nome:m.nome,tipo:(MUS_TIPOS.find(t=>t[0]===m.tipo)||[])[1]||"",duracao:m.tipo==="fundo"?"fundo":musSecs(m)?fmt(musSecs(m)):"a definir",cenas:musUses(p,m)}))}:{})};
 }
 function where(p){
   const cs=scenes(p)[currentScene(p)];
@@ -2454,24 +2601,26 @@ async function runAI(prompt, renderFn, long, target){
 /* =====================================================================
    FOLHAS: ideias, mais, cenas no celular, aviso
    ===================================================================== */
-function openIdeas(){
-  navLayer();
-  const p=cur();
-  $("#layer").innerHTML=`<div class="sheet" data-a="close"><div class="card2" role="dialog" aria-label="Ideias soltas">
-    <div class="sheet-head"><h2>Ideias soltas</h2><button class="btn sm icon ghost" data-a="close" aria-label="Fechar">${I.x}</button></div>
-    <p class="note" style="margin:0">Teve uma ideia para outra parte da peça? Anote aqui e volte para o que estava fazendo.</p>
-    <textarea class="in" id="ideaIn" placeholder="Ex.: a ovelha podia cantar no final"></textarea>
-    <div class="row"><button class="btn primary" data-a="ideaAdd">Guardar ideia</button></div>
-    <div>${(p.ideias||[]).map((t,i)=>`<div class="idea"><p>${esc(t)}</p><button class="btn sm icon ghost" data-a="ideaDel" data-i="${i}" aria-label="Apagar ideia">${I.x}</button></div>`).join("")||'<p class="note">Nenhuma ideia guardada.</p>'}</div>
-  </div></div>`;
-  setTimeout(()=>$("#ideaIn")?.focus(),60);
-}
+function openIdeas(){ openCapture(); }
+/* anotar uma necessidade sem precisar saber onde ela "mora" */
+const NEED_K=[["objeto","Objeto"],["cenario","Cenário"],["som","Som"],["outro","Outro"]];
+function openNeedSheet(keep){ const p=cur(); navLayer(); const k=S.needKind||"", sc=named(p), txt=keep?keep.txt:"", sid=keep?keep.sid:"";
+  $("#layer").innerHTML=sheetWrap("Anotar algo que precisamos",`<span class="eyebrow">Produção</span><h2>O que precisamos?</h2>`,`
+    <textarea class="in" id="needIn" rows="3" placeholder="Ex.: 3 cajados, tecido azul para o mar" aria-label="O que precisamos">${esc(txt)}</textarea>
+    <span class="note" style="margin-top:-6px">Uma coisa por linha.</span>
+    <div style="display:grid;gap:6px"><b style="font-size:14px">Que tipo? <span class="note" style="font-weight:400">opcional</span></b><div class="chips">${NEED_K.map(([v,l])=>`<button class="chip ${k===v?"on":""}" data-a="needkind" data-k="${v}" aria-pressed="${k===v}">${l}</button>`).join("")}</div></div>
+    ${sc.length&&k!=="outro"?`<label class="f">Para qual cena? <span class="h">opcional</span><select id="needSc"><option value="">Para a peça toda</option>${sc.map(x=>`<option value="${x.el.id}" ${sid===x.el.id?"selected":""}>Cena ${x.n} · ${esc(x.el.x)}</option>`).join("")}</select></label>`:""}
+    <div class="row"><button class="btn primary" data-a="needsave">Anotar</button></div>`);
+  setTimeout(()=>$("#needIn")?.focus(),50); }
+function saveNeed(p,txt,k,sid){ const L=lines(txt); if(!L.length) return 0; const s=sid&&sceneById(p,sid), add=(o,key)=>{ o[key]=[String(o[key]||"").trim(),...L].filter(Boolean).join("\n"); };
+  if(k==="objeto") add(s?s.el:p.producao,"objetos"); else if(k==="cenario") add(s?s.el:p.producao,"cenario"); else if(k==="som") add(s?s.el:p.producao,"som"); else add(p.producao,"outros");
+  return L.length; }
 function openMore(){
   navLayer();
   $("#layer").innerHTML=`<div class="sheet" data-a="close"><div class="card2" role="dialog" aria-label="Mais">
     <div class="sheet-head"><h2>Mais</h2><button class="btn sm icon ghost" data-a="close" aria-label="Fechar">${I.x}</button></div>
-    <div class="more">${GROUPS.map(g=>`<span class="grp-h">${g}</span>${STAGES.filter(s=>s.g===g).map(s=>`<button class="btn ${cur()&&cur().tab===s.k?"on":""}" data-a="tab" data-k="${s.k}">${I[s.k]}${s.k==="documentos"?"Documentos e impressão":s.l}</button>`).join("")}`).join("")}
-    <span class="grp-h">Outras opções</span><button class="btn" data-a="ideas">${I.bulb}Ideias soltas</button><button class="btn ${S.guiado?"on":""}" data-a="guiado" aria-pressed="${S.guiado}">${S.guiado?"Sair do modo guiado":"Ligar o modo guiado (um passo por vez)"}</button><button class="btn" data-a="home">${I.back}Minhas peças</button></div></div></div>`;
+    <div class="more">${GROUPS.map(g=>`<span class="grp-h">${g}</span>${STAGES.filter(s=>s.g===g).map(s=>`<button class="btn ${cur()&&cur().tab===s.k&&!(s.k==="producao"&&S.ptab==="luz")?"on":""}" data-a="tab" data-k="${s.k}">${I[s.k]}${s.k==="documentos"?"Documentos e impressão":s.l}</button>${s.k==="producao"?`<button class="btn ${cur()&&cur().tab==="producao"&&S.ptab==="luz"?"on":""}" data-a="luzgo" data-k="luz">${I.bulb}Iluminação</button>`:""}`).join("")}`).join("")}
+    <span class="grp-h">Outras opções</span><button class="btn" data-a="capture">${I.bulb}Anotar ideia</button><button class="btn" data-a="ideasview">${I.list}Minhas ideias</button><button class="btn ${S.guiado?"on":""}" data-a="guiado" aria-pressed="${S.guiado}">${S.guiado?"Sair do modo guiado":"Ligar o modo guiado (um passo por vez)"}</button><button class="btn" data-a="home">${I.back}Minhas peças</button></div></div></div>`;
 }
 function openDrawer(){
   navLayer();
@@ -2485,6 +2634,7 @@ function toast(msg,withUndo){
   const t=document.createElement("div"); t.className="toast"; t.setAttribute("role","status"); t.innerHTML=`<span>${esc(msg)}</span>${withUndo&&undo.length?`<button data-a="undo">Desfazer</button>`:""}`; document.body.appendChild(t);
   clearTimeout(toastT); toastT=setTimeout(()=>t.remove(),withUndo?5000:1800);
 }
+function toastBtn(msg,label,act){ toast(msg); const t=$(".toast"); if(t){ const b=document.createElement("button"); b.dataset.a=act; b.textContent=label; t.appendChild(b); clearTimeout(toastT); toastT=setTimeout(()=>t.remove(),7000); } }
 function updTitle(p){ const d=$("#docTitle"); if(d) d.textContent=p.titulo||"Peça sem título"; }
 
 /* =====================================================================
@@ -2529,6 +2679,8 @@ document.addEventListener("pointercancel",()=>dragEnd());
 function setPath(p,path,val){
   if(path.startsWith("L:")){ const [,kind,id,k]=path.split(":"); const arr=p.lighting[{fix:"fixtures",area:"areas",state:"states",cue:"cues"}[kind]]; const o=arr&&arr.find(x=>x.id===id); if(o) o[k]=val; return; }
   if(path.startsWith("el:")){ const [,id,k]=path.split(":"); const e=p.els.find(x=>x.id===id); if(e) e[k]=val; return; }
+  if(path.startsWith("M:")){ const [,id,k]=path.split(":"); const m=p.musicas.find(x=>x.id===id); if(!m) return;
+    if(k==="nome"){ const old=m.nome; p.els.forEach(e=>{ if(e.t==="musica"&&(e.mid===id||norm(musName(e.x))===norm(old))){ e.x=val; e.mid=id; } }); } m[k]=val; return; }
   const k=path.split("."); let o=p; for(let i=0;i<k.length-1;i++) o=o[k[i]]; o[k[k.length-1]]=val;
 }
 let renameFrom=null;
@@ -2540,30 +2692,38 @@ document.addEventListener("focusin",e=>{
     const hasSug=!!$(".sugs"); if((el&&el.t==="personagem"&&window.innerWidth<1000)!==hasSug) renderBar();
     const ci=currentScene(p); $$("#side .nav-item").forEach(b=>b.classList.toggle("on",+b.dataset.i===ci)); const cs=scenes(p)[ci]; if(cs&&cs.el) setPos(p,cs.el.id); }
   if(t.dataset&&/^personagens\.\d+\.nome$/.test(t.dataset.f||"")) renameFrom=t.value;
+  if(window.innerWidth<=760&&t.matches&&t.matches(".sheet input, .sheet textarea, .sheet select")) setTimeout(()=>{ if(document.activeElement===t) t.scrollIntoView({block:"center"}); },320);
 });
 document.addEventListener("focusout",e=>{
   const t=e.target, p=cur(); if(!p) return;
   if(t.dataset&&t.dataset.el){
     setTimeout(()=>{ const a=document.activeElement; if(!a||!a.dataset||!a.dataset.el) document.body.classList.remove("typing"); },150);
     const blurId=t.dataset.el; setTimeout(()=>{ const a=document.activeElement; if(AC.id===blurId&&(!a||!a.closest||!a.closest(".ac"))) hideAC(); },180);
-    const el=p.els.find(x=>x.id===t.dataset.el); if(el&&el.t==="personagem"&&el.x.trim()){ const before=p.personagens.length; ensureChar(p,el.x); if(p.personagens.length!==before){ touch(p); sideLater(); } } }
+    const el=p.els.find(x=>x.id===t.dataset.el); if(el&&el.t==="musica"&&el.x.trim()){ const n=p.musicas.length, had=el.mid; ensureMusic(p,el); if(n!==p.musicas.length||had!==el.mid){ touch(p); const w=$(`[data-wrap="${el.id}"] .mdur`); if(!w) setTimeout(()=>{ if(!document.activeElement||!document.activeElement.dataset||!document.activeElement.dataset.el) renderPage(); },200); } }
+    if(el&&el.t==="personagem"&&el.x.trim()){ const before=p.personagens.length; ensureChar(p,el.x); if(p.personagens.length!==before){ touch(p); sideLater(); } } }
 });
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.id==="hubQ"){ S.q=t.value; refreshGrid(); return; }
+  if(t.id==="capIn"){ setDraft(t.value); autosize(t); return; }
+  if(t.dataset&&t.dataset.idea){ const o=findIdea(t.dataset.idea); autosize(t); if(!o) return; o.x.texto=t.value; if(o.p){ pending.add(o.p.id); clearTimeout(saveT); saveT=setTimeout(flush,700); } else keep(); return; }
   const p=cur(); if(!p||S.view!=="edit") return;
   if(t.tagName==="TEXTAREA") autosize(t);
-  if(t.dataset.el){ const el=p.els.find(x=>x.id===t.dataset.el); if(el){ el.x=t.value; touch(p); sideLater(); if(el.t==="personagem"||el.t==="cena") showAC(p,el); if(el.t==="personagem"&&window.innerWidth<1000) renderBar(); } return; }
+  if(t.dataset.el){ const el=p.els.find(x=>x.id===t.dataset.el); if(el){ el.x=t.value; touch(p); sideLater(); if(el.t==="musica"&&el.mid){ const m=p.musicas.find(x=>x.id===el.mid); if(m&&norm(musName(el.x))!==norm(m.nome)) el.mid=""; } if(el.t==="personagem"||el.t==="cena"||el.t==="musica") showAC(p,el); if(el.t==="personagem"&&window.innerWidth<1000) renderBar(); } return; }
   if(t.dataset.f){ let v=t.value; if(t.type==="number") v=v===""?"":Math.max(0,Math.min(100,+v)); setPath(p,t.dataset.f,v); touch(p);
     if(/^L:cue:[^:]+:sceneId$/.test(t.dataset.f)){ const c=Lc(p,t.dataset.f.split(":")[2]); if(c){ c.elId=""; openCueSheet(c.id); } return; }
     if(t.dataset.f==="titulo") updTitle(p);
     if(p.tab==="historia"){ refreshFill(p); const st=t.closest(".stop"); if(st) st.classList.toggle("d",!!t.value.trim()); }
     if(t.dataset.f.endsWith(":x")){ const h=$("#shTitle"); if(h) h.textContent=v||"Cena sem nome"; }
+    if(t.dataset.f.startsWith("M:")){ const [,mid,k]=t.dataset.f.split(":"); const m=p.musicas.find(x=>x.id===mid);
+      if(m&&k==="nome"){ const h=$("#musTitle"); if(h) h.textContent=v||"Nova música"; }
+      const c=$("#musConta"); if(m&&c){ const bad=["dur","ini","fim"].find(x=>m[x]&&!parseDur(m[x])), sec=musSecs(m); c.innerHTML=bad?`Não entendi “${esc(m[bad])}”. Use minutos:segundos, como 3:40.`:m.tipo==="fundo"?"Não soma no tempo da peça.":sec?`Conta <b>${fmtLong(sec)}</b> no tempo da cena.`:"Sem duração: conta 1 minuto no tempo da cena."; c.classList.toggle("warn",!!bad); } }
     if(!t.dataset.guide && S.guiado) setTimeout(refreshGuide,0); }
 });
 document.addEventListener("change",e=>{
   const t=e.target;
   if(t.id==="hubSort"){ S.sort=t.value; refreshGrid(); return; }
+  if(t.dataset&&t.dataset.ilink==="play"){ S.linkPlay=t.value; render(); return; }
   const p=cur();
   if(t.dataset.doc){ S.print.docs[t.dataset.doc]=t.checked; saveLocal(); renderMain(); return; }
   if(!p) return;
@@ -2591,7 +2751,7 @@ document.addEventListener("keydown",e=>{
   const t=e.target;
   if(t.id==="aiQ"&&e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); aiChat(t.value); return; }
   if(t.id==="noteIn"&&e.key==="Enter"&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); $('[data-a="nadd"]')?.click(); return; }
-  if(t.id==="ideaIn"&&e.key==="Enter"&&!e.shiftKey){ e.preventDefault(); $('[data-a="ideaAdd"]')?.click(); return; }
+  if(t.id==="capIn"&&e.key==="Enter"&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); $('[data-a="capsave"]')?.click(); return; }
   if(!t.dataset||!t.dataset.el) return;
   const p=cur(); const idx=p.els.findIndex(x=>x.id===t.dataset.el); if(idx<0) return; const el=p.els[idx];
   if(AC.items.length&&AC.id===el.id){
@@ -2647,6 +2807,29 @@ document.addEventListener("click",async e=>{
     case "npai": createFromNew(true); break;
     case "open": { navTo(); S.menu=null; S.renaming=null; S.lastId=b.dataset.id; S.view="edit"; S.charSel=null; S.showLong=false; S.rview="cena"; undo.length=0; chat=[]; const pp=cur(); if(!pp) return; ensureDefaults(pp); if(b.dataset.k) pp.tab=b.dataset.k; restorePos(pp); saveLocal(); render(); revealPos(pp); break; }
     case "pmenu": S.menu=S.menu===b.dataset.id?null:b.dataset.id; refreshGrid(); break;
+    case "capture": openCapture(); break;
+    case "musadd": { pushUndo(p); const m={id:uid(),nome:"",link:"",dur:"",ini:"",fim:"",tipo:"",quem:"",obs:""}; p.musicas.push(m); touch(p); renderMain(); openMusicSheet(m.id); setTimeout(()=>$(`[data-f="M:${m.id}:nome"]`)?.focus(),60); break; }
+    case "musopen": hideAC(); openMusicSheet(b.dataset.id); break;
+    case "mustipo": { const m=p.musicas.find(x=>x.id===b.dataset.id); if(!m) return; m.tipo=m.tipo===b.dataset.k?"":b.dataset.k; touch(p); openMusicSheet(m.id); break; }
+    case "musdelask": $("#musdel").hidden=false; break;
+    case "musdelno": $("#musdel").hidden=true; break;
+    case "musdel": { pushUndo(p); const id=b.dataset.id; p.musicas=p.musicas.filter(x=>x.id!==id); p.els.forEach(e=>{ if(e.mid===id) e.mid=""; }); touch(p); closeLayer(); renderMain(); toast("Música excluída. As linhas do roteiro continuam.",true); break; }
+    case "needadd": S.needKind=""; openNeedSheet(); break;
+    case "needkind": { const keepV={txt:($("#needIn")||{}).value||"",sid:($("#needSc")||{}).value||""}; S.needKind=S.needKind===b.dataset.k?"":b.dataset.k; openNeedSheet(keepV); break; }
+    case "needsave": { const v=($("#needIn")||{}).value||""; if(!v.trim()){ toast("Escreva o que precisamos antes de anotar."); $("#needIn")?.focus(); return; } pushUndo(p); const n=saveNeed(p,v,S.needKind,($("#needSc")||{}).value||""); touch(p); closeLayer(); S.ptab="lista"; renderMain(); toast(`${pl(n,"item anotado","itens anotados")} na lista.`,true); break; }
+    case "histnext": { const f=histNext(p); if(!f){ goTab(p,"cenas"); break; } const el=$(`[data-f="${f}"]`); if(el){ const det=el.closest("details"); if(det) det.open=true; el.scrollIntoView({block:"center"}); el.focus(); } break; }
+    case "capsave": { const t=$("#capIn"); const v=t?t.value:""; if(!v.trim()){ toast("Escreva a ideia antes de guardar."); t&&t.focus(); return; } const x=saveIdea(v,b.dataset.k||null); setDraft(""); if(S.view==="ideas"){ render(); } else { $("#layer").innerHTML=captureHTML(); setTimeout(()=>$("#capIn")?.focus(),30); } toast(x?(b.dataset.k?"Ideia guardada na peça.":"Ideia guardada."):"Essa ideia já estava guardada."); break; }
+    case "ideasview": navTo(); closeLayer(); S.view="ideas"; S.linking=null; S.menu=null; render(); scrollTo(0,0); break;
+    case "ideaf": S.ideaF=b.dataset.k; render(); break;
+    case "idealink": { const o=findIdea(b.dataset.id); if(!o) return; if(S.linking===b.dataset.id){ S.linking=null; } else { S.linking=b.dataset.id; S.linkPlay=o.p?o.p.id:""; } render(); break; }
+    case "ideaok": { const id=b.dataset.id, card=b.closest(".idea-card"); const sc=card&&card.querySelector('[data-ilink="scene"]'), ch=card&&card.querySelector('[data-ilink="char"]'); moveIdea(id,S.linkPlay||null,sc?sc.value:"",ch?ch.value:""); S.linking=null; render(); const o=findIdea(id); toast(o&&o.p?"Ideia ligada: "+ideaWhere(o):"Agora é uma ideia solta."); break; }
+    case "ideanew": { const o=findIdea(b.dataset.id); if(!o) return; navTo(); const np=ensureDefaults(blankPlay()); np.dev.ideia=o.x.texto; np.tab="historia"; o.arr.splice(o.arr.indexOf(o.x),1); S.plays[np.id]=np; S.lastId=np.id; touch(np); saveLocal(); S.view="edit"; S.charSel=null; S.sceneSel=null; S.curId=null; undo.length=0; chat=[]; render(); scrollTo(0,0); toast("Peça criada a partir da ideia."); break; }
+    case "ideadel": { const o=findIdea(b.dataset.id); if(!o) return; const idx=o.arr.indexOf(o.x); o.arr.splice(idx,1); ideaUndo.last={x:o.x,arr:o.arr,idx,p:o.p}; if(o.p){ pending.add(o.p.id); flush(); } else saveLocal(); render(); toastBtn("Ideia apagada.","Desfazer","ideaundo"); break; }
+    case "ideaundo": { const u=ideaUndo.last; if(!u) return; u.arr.splice(u.idx,0,u.x); ideaUndo.last=null; if(u.p){ pending.add(u.p.id); flush(); } else saveLocal(); $$(".toast").forEach(t=>t.remove()); if(S.view==="ideas") render(); toast("Ideia de volta."); break; }
+    case "nxskip": (S.skip[p.id]=S.skip[p.id]||[]).push(b.dataset.k); renderMain(); break;
+    case "nxreset": S.skip[p.id]=[]; renderMain(); break;
+    case "nxareas": S.open["nx-areas"]=!S.open["nx-areas"]; renderMain(); break;
+    case "undodel": { const u=S.lastDel; if(!u) return; S.plays[u.p.id]=u.p; if(u.wasLast) S.lastId=u.p.id; pending.add(u.p.id); flush(); S.lastDel=null; $$(".toast").forEach(t=>t.remove()); render(); toast(`“${u.p.titulo||"Peça sem título"}” voltou.`); break; }
     case "clearq": S.q=""; { const q=$("#hubQ"); if(q){ q.value=""; q.focus(); } } refreshGrid(); break;
     case "scmenu": { const id=b.dataset.id; S.scMenu=S.scMenu===id?null:id; renderMain(); setTimeout(()=>$(`.scard[data-sid="${id}"] .menu button`)?.focus(),20); break; }
     case "scdelcard": { const id=b.dataset.id; S.scMenu=null; renderMain(); const c=$("#scdel-"+id); if(c){ c.hidden=false; c.querySelector("button")?.focus(); } break; }
@@ -2661,7 +2844,7 @@ document.addEventListener("click",async e=>{
     case "dup": { const src=S.plays[b.dataset.id]; if(!src) return; const c=ensureDefaults(JSON.parse(JSON.stringify(src))); c.id=uid(); delete c.exemplo; c.fav=false; c.titulo=(src.titulo||"Peça sem título")+" (cópia)"; c.updatedAt=Date.now(); S.plays[c.id]=c; pending.add(c.id); flush(); S.menu=null; refreshGrid(); toast("Cópia criada: "+c.titulo); break; }
     case "askdel": if(S.menu){ S.menu=null; refreshGrid(); } $("#del-"+b.dataset.id).hidden=false; break;
     case "nodel": $("#del-"+b.dataset.id).hidden=true; break;
-    case "del": { const id=b.dataset.id; const t=(S.plays[id]||{}).titulo; delete S.plays[id]; delete S.an[id]; if(S.lastId===id) S.lastId=null; saveLocal(); render(); toast(`“${t||"Peça sem título"}” foi excluída`); if(db&&me&&id!=="exemplo"){ try{ await db.collection("data/users/"+me).doc(id).delete(); }catch(_){} } break; }
+    case "del": { const id=b.dataset.id; const pp=S.plays[id]; if(!pp) return; S.lastDel={p:pp,wasLast:S.lastId===id}; delete S.plays[id]; delete S.an[id]; if(S.lastId===id) S.lastId=null; saveLocal(); render(); toastBtn(`“${pp.titulo||"Peça sem título"}” foi excluída.`,"Desfazer","undodel"); if(db&&me&&id!=="exemplo"){ try{ await db.collection("data/users/"+me).doc(id).delete(); }catch(_){} } break; }
     case "tab": goTab(p,b.dataset.k); break;
     case "more": openMore(); break;
     case "guiado": S.guiado=!S.guiado; if(S.guiado) S.focus=currentScene(p); saveLocal(); closeLayer(); render(); break;
@@ -2670,11 +2853,11 @@ document.addEventListener("click",async e=>{
     case "gai": { const q={0:"Me ajude a escrever a ideia desta peça em uma frase.",1:"Sugira 3 opções de mensagem para esta peça.",2:"Para quem esta peça funciona melhor? Sugira o público e a faixa etária.",3:"Sugira os personagens desta peça.",4:"Sugira um conflito claro e forte para esta história.",5:"Proponha as cenas desta peça.",6:"Escreva a primeira cena.",7:"Escreva as cenas que ainda faltam.",8:"Revise a peça: duração, clareza e falas difíceis de decorar.",9:"O que preciso preparar antes do primeiro ensaio?"}[i]; openAssist(q); break; }
     case "revisado": pushUndo(p); p.revisado=true; touch(p); renderMain(); toast("Revisão marcada."); break;
     case "undo": doUndo(); break;
-    case "ideas": openIdeas(); break;
+    case "ideas": openCapture(); break;
     case "drawer": openDrawer(); break;
     case "assist": openAssist(); break;
     case "askai": openAssist(b.dataset.q); break;
-    case "close": closeLayer(); if(p&&["cenas","producao","ensaio","roteiro"].includes(p.tab)) renderMain(); break;
+    case "close": closeLayer(); if(p&&["cenas","producao","ensaio","roteiro","geral"].includes(p.tab)) renderMain(); break;
     case "chip": { const k=b.dataset.k; if(k==="analyze"){ if(p.tab!=="geral") navTo(); closeLayer(); if(p.tab!=="geral"){ p.tab="geral"; keep(); render(); } analyze(p); break; } if(k==="q") aiChat(b.dataset.l); else if(k==="develop") aiDevelop($("#aiOut")); else if(k.startsWith("aiq:")) aiPlan(k.slice(4),$("#aiOut")); else if(k.startsWith("gen:")) aiGenerate(k.slice(4)); break; }
     case "send": aiChat(($("#aiQ")||{}).value); break;
     case "newchat": chat=[]; openAssist(); break;
@@ -2694,7 +2877,7 @@ document.addEventListener("click",async e=>{
     case "gotosc": { const id=b.dataset.id; if(p.tab!=="cenas") navTo(); setPos(p,id); if(p.tab!=="cenas"){ p.tab="cenas"; keep(); render(); } closeLayer(); const c=$(`.scard[data-sid="${id}"]`); if(c) c.scrollIntoView({block:"center"}); openSceneSheet(id); break; }
     case "gochar": S.charSel=b.dataset.id; goTab(p,"personagens"); break;
     case "scmove": { const sc=named(p); const from=sc.findIndex(x=>x.el.id===b.dataset.id); const to=from+(+b.dataset.d); if(from<0||to<0||to>=sc.length) return; pushUndo(p); if(p.usaAtos) sc[from].el.ato=sc[to].el.ato; moveScene(p,from,to); normalizeActs(p); touch(p); const shOpen=!!$("#layer").innerHTML; S.scMenu=null; renderMain(); if(shOpen) openSceneSheet(b.dataset.id); toast(`Agora é a cena ${named(p).findIndex(x=>x.el.id===b.dataset.id)+1}. O roteiro foi reorganizado.`,true); break; }
-    case "luzgo": S.ptab=b.dataset.k; if(p.tab!=="producao") goTab(p,"producao"); else renderMain(); break;
+    case "luzgo": S.ptab=b.dataset.k; if(b.dataset.k==="luz"&&!["cues","mapa","areas","estados"].includes(S.ltab)) S.ltab="cues"; if(p.tab!=="producao") goTab(p,"producao"); else { closeLayer(); render(); } break;
     case "ltab": S.ltab=b.dataset.k; renderMain(); break;
     case "mapsel": S.lsel=S.lsel===b.dataset.id?null:b.dataset.id; renderMain(); break;
     case "lstarter": pushUndo(p); lightStarter(p,b.dataset.k==="fix"); touch(p); S.ptab="luz"; S.ltab=b.dataset.k==="fix"?"mapa":"estados"; if(p.tab!=="producao") goTab(p,"producao"); else renderMain(); toast(b.dataset.k==="fix"?"Modelo criado: 6 equipamentos, 5 áreas e 6 estados.":"Áreas e estados básicos criados.",true); break;
@@ -2765,7 +2948,7 @@ document.addEventListener("click",async e=>{
     case "ndel": { const s=sceneById(p,b.dataset.id); if(!s) return; s.el.notas=s.el.notas.filter(x=>x.id!==b.dataset.n); touch(p); renderMain(); break; }
     case "plano": Object.keys(S.print.docs).forEach(k=>S.print.docs[k]=false); S.print.docs.ensaio=true; saveLocal(); goTab(p,"documentos"); break;
     /* produção e documentos */
-    case "ptab": S.ptab=b.dataset.k; renderMain(); break;
+    case "ptab": { const was=S.ptab; S.ptab=b.dataset.k; if((was==="luz")!==(S.ptab==="luz")) render(); else renderMain(); break; }
     case "tam": S.print.tamanho=b.dataset.k; saveLocal(); renderMain(); break;
     case "aiq": { const inSheet=!!$("#aiOut"); aiPlan(b.dataset.k, inSheet?$("#aiOut"):$("#aiInline")); break; }
     case "aigen": aiGenerate(b.dataset.k); break;
