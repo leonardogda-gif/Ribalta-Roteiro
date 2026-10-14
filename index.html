@@ -1270,7 +1270,7 @@ function salvacaoPlay(){
       comeco:"A criação do mundo e o engano de Adão e Eva.",desenv:"O homem vive pelo próprio esforço: o trabalho, as guerras, a arca, os mandamentos, o Egito e a Babilônia. O amor de Deus sempre esteve lá.",
       conflitoArco:"400 anos de silêncio: “Deus ainda está aqui?”",climax:"O Salvador chegou: Maria, José, os pastores e os Reis Magos diante da manjedoura.",final:"Uma família no Natal percebe que precisa de salvação hoje. Jesus entra e abraça a família."},
     personagens:[
-      C("Narração","Isabella Martelli","Voz que conduz a história entre as cenas.",{cor:COLORS[9]}),
+      C("Narração","Isabella Martelli","Voz que conduz a história entre as cenas. Narração gravada.",{cor:COLORS[9],mic:"nao"}),
       C("Adão","Samuel","Na coreografia do engano.",{cor:COLORS[0]}),C("Eva","Nicole","Na coreografia do engano.",{cor:COLORS[4]}),
       C("Trabalhador 1","","Elenco do trabalho.",{cor:COLORS[0]}),C("Trabalhador 2","","Elenco do trabalho.",{cor:COLORS[1]}),C("Trabalhador 3","","Elenco do trabalho.",{cor:COLORS[2]}),C("Trabalhador 4","","Elenco do trabalho.",{cor:COLORS[3]}),C("Trabalhador 5","","Elenco do trabalho.",{cor:COLORS[4]}),
       C("Noé","","Construiu a arca e fala à igreja sobre fazer a diferença.",{cor:COLORS[7]}),
@@ -1278,7 +1278,7 @@ function salvacaoPlay(){
       C("Noras","Valentina, Manuela, Isabella","Noras de Noé. Ajudam as crianças a se posicionarem.",{cor:COLORS[5]}),
       C("Coral de crianças","","Canta “A Arca”, com figurino de animais, e “Emanuel”.",{cor:COLORS[6],figurino:"Figurino de animais (cena da arca)"}),
       C("Mulher na Babilônia","Priscila","Grava um vídeo mostrando a Babilônia e sente saudade do seu povo.",{cor:COLORS[1]}),
-      C("Telão","","Texto projetado com intérprete de Libras.",{cor:COLORS[9]}),
+      C("Telão","","Texto projetado com intérprete de Libras.",{cor:COLORS[9],mic:"nao"}),
       C("Maria","","Mãe de Jesus.",{cor:COLORS[5]}),C("José","","Pai terreno de Jesus.",{cor:COLORS[7]}),
       C("Pastor 1","","Pastor que vem adorar o menino.",{cor:COLORS[2]}),C("Pastor 2","","Pastor que conta o anúncio dos anjos.",{cor:COLORS[3]}),
       C("Meninas da dança","","Dança com bolas de luz em “Noite Santa”.",{cor:COLORS[4]}),
@@ -1316,15 +1316,15 @@ function migrate(o){
    ESTADO E GRAVAÇÃO (local sempre; nuvem quando aberto no Claude)
    ===================================================================== */
 let S={plays:{},lastId:null,view:"home",guiado:false,focus:0,curId:null,sceneSel:null,charSel:null,ptab:"lista",rview:"cena",rfs:18,rchar:"",
-  q:"",sort:"recentes",menu:null,renaming:null,showLong:false,an:{},dismiss:new Set(),ltab:"cues",lsel:null,scMenu:null,open:{},ideas:[],skip:{},saveErr:false,
-  print:{docs:{roteiro:true,porCena:false,falas:false,personagem:false,ficha:false,tecnica:false,necessidades:false,figurinos:false,objetos:false,musicas:false,cenas:false,ensaio:false,luz:false,operador:false,mtec:false,som:false},
+  q:"",sort:"recentes",menu:null,renaming:null,showLong:false,an:{},dismiss:new Set(),ltab:"cues",lsel:null,scMenu:null,open:{},ideas:[],equip:null,skip:{},saveErr:false,
+  print:{docs:{roteiro:true,porCena:false,falas:false,personagem:false,ficha:false,tecnica:false,necessidades:false,figurinos:false,objetos:false,musicas:false,cenas:false,ensaio:false,luz:false,operador:false,mtec:false,som:false,mic:false},
     cenaPagina:false,cores:false,numerar:true,marca:true,tamanho:"12",atorSel:"todos",atorNome:"todos",cenaSel:""}};
 let db=null,me=null,sample=null,downloads=null;
 const undo=[];
 function loadLocal(){
   try{
     const raw=localStorage.getItem(LS);
-    if(raw){ const d=JSON.parse(raw); for(const k in (d.plays||{})) S.plays[k]=migrate(d.plays[k]); S.lastId=d.lastId||null; S.guiado=!!d.guiado; S.rfs=d.rfs||18; S.ideas=Array.isArray(d.ideias)?d.ideias.filter(x=>x&&x.texto):[];
+    if(raw){ const d=JSON.parse(raw); for(const k in (d.plays||{})) S.plays[k]=migrate(d.plays[k]); S.lastId=d.lastId||null; S.guiado=!!d.guiado; S.rfs=d.rfs||18; S.equip=d.equip&&typeof d.equip==="object"?d.equip:null; S.ideas=Array.isArray(d.ideias)?d.ideias.filter(x=>x&&x.texto):[];
       if(d.print){ const o=d.print; S.print={...S.print,...o,docs:{...S.print.docs,...(o.docs||{})}};
         if(!o.docs){ S.print.docs.roteiro=o.roteiro!==false; S.print.docs.falas=!!o.atores; S.print.docs.tecnica=!!o.ficha; } } }
     else { const old=localStorage.getItem(LS_OLD); if(old){ const d=JSON.parse(old); for(const k in (d.plays||{})) S.plays[k]=migrate(d.plays[k]); S.lastId=d.lastId||null; } }
@@ -1334,6 +1334,10 @@ function loadLocal(){
   if(oldEx || (!seen && !S.plays.exemplo)) S.plays.exemplo=examplePlay();
   let seeded=false; try{ seeded=localStorage.getItem("ribalta.seed.salvacao")==="1"; localStorage.setItem("ribalta.seed.salvacao","1"); }catch(e){}
   if(!seeded && !S.plays.salvacao){ S.plays.salvacao=salvacaoPlay(); S.lastId="salvacao"; setTimeout(saveLocal,0); }
+  /* narração gravada e telão não usam microfone (ajuste único na peça da base) */
+  let mn=false; try{ mn=localStorage.getItem("ribalta.mic.narr")==="1"; localStorage.setItem("ribalta.mic.narr","1"); }catch(e){}
+  if(!mn&&S.plays.salvacao) S.plays.salvacao.personagens.forEach(c=>{ if(c.mic==null&&/^(narra|tel[aã]o)/i.test(c.nome)) c.mic="nao"; });
+  if(!S.equip) S.equip={corpo:4,semfio:2,comfio:6};
   /* 14/10/2026: o roteiro correto "Até que Ele venha" substitui "A Salvação Está Chegando".
      A versão anterior fica guardada como cópia, para nada se perder. */
   let v2=false; try{ v2=localStorage.getItem("ribalta.seed.ateqv")==="1"; localStorage.setItem("ribalta.seed.ateqv","1"); }catch(e){}
@@ -1345,7 +1349,7 @@ let keepT=null; function keep(){ clearTimeout(keepT); keepT=setTimeout(saveLocal
 window.addEventListener("pagehide",()=>saveLocal());
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) saveLocal(); });
 /* devolve true/false: a tela nunca diz "salvo" se o navegador recusou */
-function saveLocal(){ let ok=true; try{ localStorage.setItem(LS,JSON.stringify({plays:S.plays,lastId:S.lastId,guiado:S.guiado,print:S.print,rfs:S.rfs,ideias:S.ideas})); }catch(e){ ok=false; }
+function saveLocal(){ let ok=true; try{ localStorage.setItem(LS,JSON.stringify({plays:S.plays,lastId:S.lastId,guiado:S.guiado,print:S.print,rfs:S.rfs,ideias:S.ideas,equip:S.equip})); }catch(e){ ok=false; }
   const was=S.saveErr; S.saveErr=!ok; if(!ok&&!was) toast("Não foi possível salvar neste aparelho. O navegador está sem espaço ou em modo anônimo."); if(was!==S.saveErr) setSaved(false); return ok; }
 window.addEventListener("beforeunload",e=>{ const ok=saveLocal(); if(!ok){ e.preventDefault(); e.returnValue=""; } });
 let saveT=null; const pending=new Set();
@@ -1405,6 +1409,62 @@ function scenesRaw(p){
 const named=p=>scenes(p).filter(s=>s.el);
 function sceneOfIndex(p,idx){ const sc=scenes(p); return Math.max(0,sc.findIndex(s=>idx>=s.start&&idx<s.end)); }
 function sceneById(p,id){ return scenes(p).find(s=>s.el&&s.el.id===id); }
+/* ===== MICROFONES =====
+   Equipamento da igreja em S.equip {corpo (headsets), semfio (bastões sem fio), comfio (bastões com fio)}.
+   Por cena: quem fala precisa de microfone. Quem tem mais falas fica com headset; depois bastão sem fio; depois com fio.
+   O mesmo ator mantém o mesmo microfone entre cenas sempre que possível. Ajustes manuais ficam em cena.mics {personagem: "H1"|"S2"|"F3"|"-"}. */
+const MIC_T={H:"Headset",S:"Bastão sem fio",F:"Bastão com fio"};
+const micLabel=m=>!m||m==="-"?"Sem microfone":MIC_T[m[0]]+" "+m.slice(1);
+function micPlan(p){ return memo("mic:"+p.id,()=>{
+  const eq=S.equip||{corpo:0,semfio:0,comfio:0}, cap={H:+eq.corpo||0,S:+eq.semfio||0,F:+eq.comfio||0};
+  const sc=named(p), out=[]; let prev={};
+  sc.forEach(s=>{ const cnt={}; for(let i=s.start+1;i<s.end;i++){ const e=p.els[i]; if(e.t==="fala"&&e.x.trim()){ const w=speakerOf(p,i); if(w&&w.trim()) cnt[w.trim()]=(cnt[w.trim()]||0)+1; } }
+    const people=new Map(); Object.entries(cnt).forEach(([nm,n])=>{ const c=charByName(p,nm); if(c&&c.mic==="nao") return; const key=c&&c.ator.trim()?norm(c.ator):"#"+norm(nm);
+      if(!people.has(key)) people.set(key,{key,ator:c&&c.ator.trim()||"",chars:[],lines:0,mic:null,manual:false}); const o=people.get(key); o.chars.push(c?c.nome:nm); o.lines+=n; });
+    const P=[...people.values()], used=new Set(), ov=s.el.mics||{};
+    P.forEach(o=>{ const m=o.chars.map(n=>ov[n]).find(Boolean); if(m&&(m==="-"||(+m.slice(1)<=cap[m[0]]&&!used.has(m)))){ o.mic=m; o.manual=true; if(m!=="-") used.add(m); } });
+    const auto=P.filter(o=>!o.manual).sort((a,b)=>b.lines-a.lines);
+    const free=t=>{ for(let k=1;k<=cap[t];k++) if(!used.has(t+k)) return t+k; return null; };
+    const left={H:cap.H-[...used].filter(m=>m[0]==="H").length,S:cap.S-[...used].filter(m=>m[0]==="S").length,F:cap.F-[...used].filter(m=>m[0]==="F").length};
+    auto.forEach(o=>{ o.want=left.H>0?"H":left.S>0?"S":left.F>0?"F":null; if(o.want) left[o.want]--; });
+    auto.forEach(o=>{ const pm=prev[o.key]; if(o.want&&pm&&pm[0]===o.want&&!used.has(pm)){ o.mic=pm; used.add(pm); } });
+    auto.forEach(o=>{ if(!o.mic&&o.want){ const m=free(o.want); if(m){ o.mic=m; used.add(m); } } });
+    const ord=m=>!m||m==="-"?99:"HSF".indexOf(m[0])*30+ +m.slice(1);
+    const rows=P.sort((a,b)=>ord(a.mic)-ord(b.mic));
+    out.push({s,rows,falta:rows.filter(o=>!o.mic).length,total:rows.length});
+    prev={}; rows.forEach(o=>{ if(o.mic&&o.mic!=="-") prev[o.key]=o.mic; }); });
+  /* caminho de cada microfone: períodos com a mesma pessoa e as passagens entre elas */
+  const uses={}; out.forEach((x,i)=>x.rows.forEach(o=>{ if(o.mic&&o.mic!=="-") (uses[o.mic]=uses[o.mic]||[]).push({i,s:x.s,o}); }));
+  const ord=m=>"HSF".indexOf(m[0])*30+ +m.slice(1), paths=[], swaps=[];
+  Object.keys(uses).sort((a,b)=>ord(a)-ord(b)).forEach(m=>{ const st=[]; uses[m].forEach(u=>{ const l=st[st.length-1]; if(l&&l.key===u.o.key){ l.i1=u.i; l.ns.push(u.s.n); } else st.push({mic:m,key:u.o.key,o:u.o,i0:u.i,i1:u.i,ns:[u.s.n]}); });
+    for(let k=1;k<st.length;k++){ const a=st[k-1], b=st[k], gap=b.i0-a.i1-1; swaps.push({mic:m,from:a.o,to:b.o,a:out[a.i1].s,b:out[b.i0].s,gap,rapida:gap===0}); }
+    paths.push({mic:m,st}); });
+  return {cap,scenes:out,swaps,paths,rapidas:swaps.filter(w=>w.rapida).length,max:out.reduce((m,x)=>x.total>m.total?x:m,{total:0})}; }); }
+const cenasTxt2=ns=>ns.length>1?`cenas ${ns.join(", ")}`:`cena ${ns[0]}`;
+const swapTxt=w=>`${w.rapida?`Entre a cena ${w.a.n} e a ${w.b.n}`:`Depois da cena ${w.a.n}, antes da ${w.b.n}`}: ${micLabel(w.mic)} passa de ${personName(w.from)} para ${personName(w.to)}`;
+const personName=o=>o.ator?`${o.ator} (${o.chars.join(", ")})`:o.chars.join(", ");
+function micOfPerson(p,key){ const out={}; micPlan(p).scenes.forEach(x=>x.rows.forEach(o=>{ if(o.key===key&&o.mic&&o.mic!=="-") (out[o.mic]=out[o.mic]||[]).push(x.s.n); })); return Object.entries(out).map(([m,ns])=>`${micLabel(m)} (${ns.length>1?"cenas":"cena"} ${ns.join(", ")})`).join(" · "); }
+function micsHTML(p){ const eq=S.equip||{}, M=micPlan(p), sc=named(p), tot=M.cap.H+M.cap.S+M.cap.F;
+  const speakers=p.personagens.filter(c=>lineCount(p,c)>0);
+  const opts=r=>{ const o=[`<option value="">Automático</option>`]; ["H","S","F"].forEach(t=>{ for(let k=1;k<=M.cap[t];k++) o.push(`<option value="${t+k}" ${r.manual&&r.mic===t+k?"selected":""}>${micLabel(t+k)}</option>`); }); o.push(`<option value="-" ${r.manual&&r.mic==="-"?"selected":""}>Sem microfone</option>`); return o.join(""); };
+  const badScenes=M.scenes.filter(x=>x.falta);
+  return `<div class="card"><div class="sec-title"><h3>Microfones da igreja</h3><span class="note">Vale para todas as peças</span></div>
+    <div class="grid2">${[["corpo","Headsets","no corpo, sem fio"],["semfio","Bastões sem fio",""],["comfio","Bastões com fio","a pessoa fica perto do cabo"]].map(([k,l,h])=>`<label class="f">${l}${h?`<span class="h">${h}</span>`:""}<input type="number" min="0" max="30" inputmode="numeric" data-eq="${k}" value="${esc(eq[k]??"")}"></label>`).join("")}</div></div>
+  ${!tot?`<div class="empty">Diga quantos microfones vocês têm para a Ribalta montar a distribuição.</div>`:`
+  <div class="docsum ${badScenes.length?"warn":""}">${M.max.total?`<b>Até ${pl(M.max.total,"pessoa fala","pessoas falam")} na mesma cena (cena ${M.max.s.n}). Vocês têm ${tot} microfones: ${M.cap.H} headsets, ${M.cap.S} sem fio e ${M.cap.F} com fio.</b>`:`<b>Ainda não há falas no roteiro.</b>`}
+    ${badScenes.length?`<span>⚠ Faltam microfones ${badScenes.length>1?"nas cenas":"na cena"} ${badScenes.map(x=>`${x.s.n} (${x.falta})`).join(", ")}.</span>`:M.max.total?`<span>✓ Dá para fazer com o que vocês têm.</span>`:""}
+    ${M.swaps.length?`<span>${pl(M.swaps.length,"troca","trocas")} de microfone na peça${M.rapidas?`, ${M.rapidas} ${M.rapidas>1?"rápidas":"rápida"} (entre cenas seguidas)`:""}. Veja o mapa completo abaixo.</span>`:""}</div>
+  ${speakers.length?`<div style="display:grid;gap:6px"><b style="font-size:14px">Quem não precisa de microfone? <span class="note" style="font-weight:400">ex.: narração gravada</span></b><div class="chips">${speakers.map(c=>`<button class="chip ${c.mic==="nao"?"on":""}" data-a="micnao" data-id="${c.id}" aria-pressed="${c.mic==="nao"}">${c.mic==="nao"?"✓ ":""}${esc(c.nome)}</button>`).join("")}</div></div>`:""}
+  <p class="note" style="margin:0">Quem tem mais falas fica com headset; quem fala pouco, com bastão. A mesma pessoa mantém o microfone entre cenas sempre que dá. Troque à mão onde quiser.</p>
+  ${M.scenes.filter(x=>x.total).map(x=>`<div class="lscene"><div class="lscene-h"><span class="eyebrow">Cena ${x.s.n}</span><b>${esc(x.s.el.x||"Sem nome")}</b><span class="spacer"></span><span class="pill ${x.falta?"warn":"ok"}">${x.falta?`⚠ faltam ${x.falta}`:`✓ ${x.total} de ${tot}`}</span></div>
+    ${x.rows.map(r=>`<div class="lrowf" style="grid-template-columns:minmax(0,1fr) auto"><span style="min-width:0"><b>${esc(personName(r))}</b><small>${pl(r.lines,"fala","falas")}${r.manual?" · escolhido à mão":""}</small></span>
+      <select data-mic="${x.s.el.id}|${esc(r.chars[0])}" aria-label="Microfone de ${esc(r.chars[0])}" style="width:auto;max-width:190px">${opts(r)}</select>
+      <span style="grid-column:1/-1;font-size:13px;font-weight:700;color:${r.mic?"var(--ok)":"var(--warn)"}">${r.mic?micLabel(r.mic):"⚠ Sem microfone disponível"}</span></div>`).join("")}</div>`).join("")||`<div class="empty">Quando houver falas no roteiro, a distribuição aparece aqui.</div>`}
+  ${M.paths.length?`<div class="card"><div class="sec-title"><h3 style="font-size:17px">Mapa de trocas</h3><span class="note">o caminho de cada microfone na peça</span></div>
+    ${M.paths.map(pa=>`<div style="display:grid;gap:4px;border-top:1px solid var(--line);padding-top:8px"><b>${esc(micLabel(pa.mic))}</b>
+      <span class="note" style="color:var(--ink)">${pa.st.map(t=>`${esc(personName(t.o))} <span class="note">(${cenasTxt2(t.ns)})</span>`).join(" → ")}</span>
+      ${pa.st.slice(1).map((t,k)=>{ const w=M.swaps.find(x=>x.mic===pa.mic&&x.to===t.o&&x.b.n===t.ns[0]); return w?`<span class="pill ${w.rapida?"warn":""}" style="justify-self:start;white-space:normal">${w.rapida?"⚠ Troca rápida":"Com tempo"} · ${esc(w.rapida?`entre a cena ${w.a.n} e a ${w.b.n}`:`${pl(w.gap,"cena","cenas")} entre a ${w.a.n} e a ${w.b.n}`)}: ${esc(personName(w.from))} → ${esc(personName(w.to))}</span>`:""; }).join("")}</div>`).join("")}</div>`:""}
+  <div class="row"><button class="btn" data-a="micdoc">${I.print}Imprimir o mapa de microfones</button></div>`}`; }
 function speakerOf(p,i){ for(let k=i;k>=0;k--){ const e=p.els[k]; if(e.t==="personagem") return e.x; if(e.t!=="fala"&&e.t!=="parentese") return null; } return null; }
 const words=t=>String(t||"").trim().split(/\s+/).filter(Boolean).length;
 /* estimativa: falas 130 palavras/min + 1,5 s; rubricas 200 palavras/min + 3 s; transição 5 s;
@@ -2183,7 +2243,7 @@ function propsIndex(p){
 }
 function producaoHTML(p){
   const sc=named(p); const t=S.ptab;
-  const tabs=[["lista","O que precisamos"],["elenco","Elenco"],["figurino","Figurino"],["cenario","Cenário"],["objetos","Objetos"],["som","Músicas e sons"],["luz","Iluminação"]];
+  const tabs=[["lista","O que precisamos"],["elenco","Elenco"],["figurino","Figurino"],["cenario","Cenário"],["objetos","Objetos"],["som","Músicas e sons"],["mics","Microfones"],["luz","Iluminação"]];
   const tabsMais=[["necessidades","Necessidades por cena"],["matriz","Quem está em cada cena"],["mtec","Matriz técnica"],["tecnica","Observações técnicas"]];
   let body="";
   if(t==="lista"){ const N=needs(p), all=N.flatMap(g=>g.items), done=all.filter(x=>p.check[x.key]).length;
@@ -2221,6 +2281,7 @@ function producaoHTML(p){
     <div class="row note"><span class="mk" style="background:var(--muted)"></span> fala na cena <span class="mk" style="border:2px solid var(--muted)"></span> em cena sem falar</div>
     ${pairsHTML(p,infos)}`:`<div class="empty">A matriz aparece quando houver cenas e personagens.</div>`; }
   if(t==="luz") body=luzHTML(p);
+  if(t==="mics") body=micsHTML(p);
   if(t==="mtec") body=mtecHTML(p);
   if(t==="tecnica") body=fld("producao.observacoes","Observações técnicas",p.producao.observacoes,"Luz, microfones, horários de ensaio, contrarregra",true)+fld("producao.outros","Outras coisas que precisamos",p.producao.outros,"Uma por linha. Aparecem na lista do que precisamos.",true);
   const tb=([k,l])=>`<button role="tab" aria-selected="${t===k}" class="${t===k?"on":""}" data-a="ptab" data-k="${k}">${l}</button>`, inMais=tabsMais.some(([k])=>k===t);
@@ -2650,7 +2711,8 @@ const DOCS=[
   ["luz","Roteiro de iluminação","Mapa do palco, equipamentos e a luz de cada cena."],
   ["operador","Ficha do operador de luz","As mudanças de luz em ordem, para quem opera a mesa."],
   ["mtec","Matriz técnica","Luz, som, cenário e objetos em cada momento."],
-  ["som","Ficha do operador de som","As músicas em ordem, com a deixa, o trecho e o link."]
+  ["som","Ficha do operador de som","As músicas em ordem, com a deixa, o trecho e o link."],
+  ["mic","Mapa de microfones","Quem usa cada microfone em cada cena e as trocas na coxia."]
 ];
 function actorList(p){ const o=S.print; return p.personagens.filter(c=>o.atorSel==="todos"||c.id===o.atorSel); }
 function actorGroups(p){ const m=new Map(); p.personagens.forEach(c=>{ const k=c.ator.trim()?norm(c.ator):"#"+c.id; if(!m.has(k)) m.set(k,{key:k,nome:c.ator.trim(),chars:[]}); m.get(k).chars.push(c); }); return [...m.values()]; }
@@ -2727,7 +2789,7 @@ function printBodyRaw(p){
   if(D.ficha){
     actorGroups(p).filter(g=>o.atorNome==="todos"||g.key===o.atorNome).forEach(g=>{
       out.push(`<section class="pg">${head("Ficha do ator")}<p class="actor-name">${esc(g.nome||"Intérprete a definir")}</p>
-        <div class="kv"><b>${g.chars.length>1?"Personagens":"Personagem"}</b><span>${g.chars.map(c=>esc(c.nome)).join(", ")}</span><b>Falas</b><span>${g.chars.reduce((a,c)=>a+lineCount(p,c),0)}</span></div>
+        <div class="kv"><b>${g.chars.length>1?"Personagens":"Personagem"}</b><span>${g.chars.map(c=>esc(c.nome)).join(", ")}</span><b>Falas</b><span>${g.chars.reduce((a,c)=>a+lineCount(p,c),0)}</span>${(()=>{ const mk=micOfPerson(p,g.nome?norm(g.nome):"#"+norm(g.chars[0].nome)); return mk?`<b>Microfone</b><span>${esc(mk)}</span>`:""; })()}</div>
         ${g.chars.map(c=>{ const L=linesFor(p,c,G,o); const objs=lines(String(c.objetos).replace(/,/g,"\n"));
           return `${g.chars.length>1?`<p class="sub-h">${esc(c.nome)}</p>`:""}<h3>Cenas, entradas e saídas</h3>${scenesTable(p,c)}
           <h3>Figurino</h3><p>${esc(c.figurino)||"—"}</p>${objs.length?`<h3>Objetos que usa</h3><ul class="chk">${objs.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
@@ -2762,6 +2824,14 @@ function printBodyRaw(p){
   if(D.som){ const snd=soundList(p);
     out.push(`<section class="pg">${head("Ficha de operação de som")}${snd.length?`<table class="op"><tr><th></th><th>Som</th><th>Cena</th><th>Deixa</th><th>Música</th><th>Tipo</th><th>Tempo</th><th>Link e obs.</th></tr>${snd.map(x=>{ const m=musOf(p,x.e); let k=x.idx-1; while(k>x.s.start&&!String(p.els[k].x).trim()) k--; const dx=k>x.s.start?lineSnippet(p,k):"Início da cena";
       return `<tr><td>☐</td><td><b>${x.code}</b></td><td>${x.s.n}</td><td>${esc(dx)}</td><td>${esc(m?m.nome:x.e.x)}${m&&m.quem?`<br><i>${esc(m.quem)}</i>`:""}</td><td>${esc(m?((MUS_TIPOS.find(t=>t[0]===m.tipo)||[])[1]||""):"")}</td><td>${esc(musTempo(m))||"a definir"}</td><td style="word-break:break-all;font-size:.85em">${esc(m&&m.link||"")}${m&&m.obs?`<br>${esc(m.obs)}`:""}</td></tr>`; }).join("")}</table>`:"<p>Nenhuma música no roteiro.</p>"}</section>`); }
+  if(D.mic){ const M=micPlan(p), cols=[]; ["H","S"].forEach(t=>{ for(let k=1;k<=M.cap[t];k++) cols.push(t+k); });
+    out.push(`<section class="pg">${head("Mapa de microfones")}<p style="margin-bottom:1em">${M.cap.H} headsets · ${M.cap.S} bastões sem fio · ${M.cap.F} bastões com fio</p>
+      <table><tr><th>Cena</th>${cols.map(m=>`<th>${esc(micLabel(m))}</th>`).join("")}<th>Com fio</th><th>Sem microfone</th></tr>${M.scenes.filter(x=>x.total).map(x=>{ const by=m=>x.rows.find(o=>o.mic===m);
+        return `<tr><td>${x.s.n} — ${esc(x.s.el.x)}</td>${cols.map(m=>`<td>${by(m)?esc(personName(by(m))):""}</td>`).join("")}<td>${x.rows.filter(o=>o.mic&&o.mic[0]==="F").map(o=>esc(micLabel(o.mic).replace("Bastão com fio","")+": "+personName(o))).join("<br>")}</td><td>${x.rows.filter(o=>!o.mic||o.mic==="-").map(o=>esc(personName(o))).join("<br>")}</td></tr>`; }).join("")}</table>
+      ${M.swaps.length?`<h3>Trocas rápidas (entre cenas seguidas)</h3>${M.rapidas?`<ul class="chk">${M.swaps.filter(w=>w.rapida).map(w=>`<li>${esc(swapTxt(w))}</li>`).join("")}</ul>`:"<p>Nenhuma.</p>"}
+        <h3>Caminho de cada microfone</h3><table><tr><th>Microfone</th><th>Quem usa, na ordem</th></tr>${M.paths.map(pa=>`<tr><td><b>${esc(micLabel(pa.mic))}</b></td><td>${pa.st.map(t=>`${esc(personName(t.o))} (${cenasTxt2(t.ns)})`).join(" → ")}</td></tr>`).join("")}</table>
+        <h3>Todas as trocas, na ordem da peça</h3><ul class="chk">${M.swaps.slice().sort((a,b)=>a.a.n-b.a.n||a.b.n-b.b.n).map(w=>`<li>${w.rapida?"<b>RÁPIDA</b> · ":""}${esc(swapTxt(w))}</li>`).join("")}</ul>`:""}
+      <h3>Por pessoa: quando pegar e para quem entregar</h3><table><tr><th>Pessoa</th><th>Microfone</th><th>Pega antes da</th><th>Entrega depois da</th><th>Entrega para</th></tr>${M.paths.flatMap(pa=>pa.st.map((t,k)=>({t,nx:pa.st[k+1]}))).sort((a,b)=>personName(a.t.o).localeCompare(personName(b.t.o),"pt-BR")||a.t.i0-b.t.i0).map(({t,nx})=>`<tr><td>${esc(personName(t.o))}</td><td>${esc(micLabel(t.mic))}</td><td>cena ${t.ns[0]}</td><td>cena ${t.ns[t.ns.length-1]}</td><td>${nx?esc(personName(nx.o)):"devolve à mesa de som"}</td></tr>`).join("")}</table></section>`); }
   out.push(...lightDocs(p,D,head));
   return out.join("")||`<section class="pg"><p>Escolha pelo menos um documento.</p></section>`;
 }
@@ -3179,8 +3249,10 @@ document.addEventListener("change",e=>{
   const t=e.target;
   if(t.id==="hubSort"){ S.sort=t.value; refreshGrid(); return; }
   if(t.dataset&&t.dataset.ilink==="play"){ S.linkPlay=t.value; render(); return; }
+  if(t.dataset&&t.dataset.eq){ S.equip=S.equip||{}; S.equip[t.dataset.eq]=Math.max(0,Math.min(30,parseInt(t.value)||0)); saveLocal(); renderMain(); return; }
   if(t.dataset&&t.dataset.charsel){ navTo(); S.charSel=t.value; renderMain(); scrollTo(0,0); return; }
   const p=cur();
+  if(t.dataset&&t.dataset.mic){ const [sid,nm]=t.dataset.mic.split("|"); if(!p) return; const sc=sceneById(p,sid); if(!sc) return; pushUndo(p); sc.el.mics=sc.el.mics||{}; if(t.value) sc.el.mics[nm]=t.value; else delete sc.el.mics[nm]; touch(p); renderMain(); return; }
   if(t.dataset.doc){ S.print.docs[t.dataset.doc]=t.checked; saveLocal(); renderMain(); return; }
   if(!p) return;
   if(t.dataset.p){ S.print[t.dataset.p]=t.type==="checkbox"?t.checked:t.value; saveLocal(); renderMain(); return; }
@@ -3264,6 +3336,8 @@ document.addEventListener("click",async e=>{
     case "open": { navTo(); S.menu=null; S.renaming=null; S.lastId=b.dataset.id; S.view="edit"; S.charSel=null; S.showLong=false; S.rview="cena"; undo.length=0; chat=[]; const pp=cur(); if(!pp) return; ensureDefaults(pp); if(b.dataset.k) pp.tab=b.dataset.k; restorePos(pp); saveLocal(); render(); revealPos(pp); break; }
     case "pmenu": S.menu=S.menu===b.dataset.id?null:b.dataset.id; refreshGrid(); break;
     case "capture": openCapture(); break;
+    case "micnao": { const c=p.personagens.find(x=>x.id===b.dataset.id); if(!c) return; c.mic=c.mic==="nao"?"":"nao"; touch(p); renderMain(); break; }
+    case "micdoc": Object.keys(S.print.docs).forEach(k=>S.print.docs[k]=false); S.print.docs.mic=true; saveLocal(); goTab(p,"documentos"); break;
     case "musadd": { pushUndo(p); const m={id:uid(),nome:"",link:"",dur:"",ini:"",fim:"",tipo:"",quem:"",obs:""}; p.musicas.push(m); touch(p); renderMain(); openMusicSheet(m.id); setTimeout(()=>$(`[data-f="M:${m.id}:nome"]`)?.focus(),60); break; }
     case "musopen": hideAC(); openMusicSheet(b.dataset.id); break;
     case "mustipo": { const m=p.musicas.find(x=>x.id===b.dataset.id); if(!m) return; m.tipo=m.tipo===b.dataset.k?"":b.dataset.k; touch(p); openMusicSheet(m.id); break; }
