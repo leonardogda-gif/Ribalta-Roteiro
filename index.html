@@ -1924,8 +1924,9 @@ function personagensHTML(p){
   if(!sel) return `<section class="panel">${head}${list}</section>`;
   const i=p.personagens.indexOf(sel), cs=charScenes(p,sel), ee=entriesExits(p,sel), tm=charTime(p,sel), akey=sel.ator.trim()?norm(sel.ator):"#"+sel.id;
   const extra=[sel.objetivo,sel.personalidade,sel.idade,sel.relacoes,sel.obs].some(v=>String(v).trim()), prod=!!(sel.figurino.trim()||sel.objetos.trim());
-  const detail=`<div class="panel" style="padding:18px;box-shadow:none;border:1.5px solid var(--line)"><div class="row">${wide?"":`<button class="btn sm ghost" data-a="back">${I.back}Todos os personagens</button>`}<span class="spacer"></span>
+  const detail=`<div class="panel" style="padding:18px;box-shadow:none;border:1.5px solid var(--line)"><div class="row">${wide?"":`<button class="btn sm ghost" data-a="selchar" data-id="">${I.back}Todos os personagens</button>`}<span class="spacer"></span>
       <button class="btn sm ghost danger" data-a="cdelask">${I.trash}Remover</button></div>
+    ${wide||p.personagens.length<2?"":`<label class="f">Trocar de personagem<select data-charsel="1" aria-label="Trocar de personagem">${p.personagens.map(c=>`<option value="${c.id}" ${c.id===sel.id?"selected":""}>${esc(c.nome||"Sem nome")}${c.ator?" · "+esc(c.ator):""}</option>`).join("")}</select></label>`}
     <div class="confirm" id="cdel" hidden>Remover ${esc(sel.nome)} da lista? As falas continuam no roteiro. <button class="btn sm danger" data-a="cdel" data-i="${i}">Remover</button><button class="btn sm" data-a="cdelno">Cancelar</button></div>
     <div class="row" style="gap:14px;flex-wrap:nowrap"><span class="avatar" style="background:${sel.cor};width:56px;height:56px;font-size:22px">${esc(initials(sel.nome))}</span><div style="display:grid;min-width:0"><span class="eyebrow">Personagem</span><h2 style="font-size:26px;overflow-wrap:anywhere">${esc(sel.nome||"Sem nome")}</h2>${sel.descricao.trim()?`<span style="overflow-wrap:anywhere">${esc(sel.descricao)}</span>`:""}${sel.ator?`<span class="note">Interpretado por ${esc(sel.ator)}</span>`:""}</div></div>
     <div class="grid2">${fld(`personagens.${i}.nome`,"Nome",sel.nome)}${fld(`personagens.${i}.ator`,"Quem interpreta",sel.ator,"","","Nome do ator ou da atriz")}</div>
@@ -2566,8 +2567,8 @@ const PRINT_CSS=`
 .pr .dlg.c .who{color:var(--cc);font-weight:700}
 .pr .mine .say{background:#FFF0A0;padding:.1em .3em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .pr .mine .who{font-weight:700}
-.pr .cue{margin:1.1em 9% .2em;color:#555;font-size:.88em}
-.pr .cue i{font-style:normal;text-transform:uppercase}
+.pr .deixa{margin:1.1em 9% .2em;color:#555;font-size:.88em;display:block;border:0;padding:0;background:none}
+.pr .deixa i{font-style:normal;text-transform:uppercase}
 .pr .ahead{display:flex;justify-content:space-between;gap:1em;border-bottom:1.5px solid #000;padding-bottom:.4em;margin-bottom:1.6em}
 .pr .ahead b{text-transform:uppercase;font-size:1.25em}
 .pr table{width:100%;border-collapse:collapse;margin:.6em 0 1.6em;font-size:.92em}
@@ -2662,8 +2663,8 @@ function linesFor(p,c,G,o){
       count++;
       let prev=null; for(let k=gi-1;k>=0;k--){ if(G[k].k==="cena") break; if(G[k].k==="dlg"||G[k].k==="acao"){ prev=G[k]; break; } }
       if(prev && !(prev.k==="dlg"&&norm(prev.who)===norm(c.nome))){
-        const txt=prev.k==="dlg"?prev.parts.filter(e=>e.t==="fala").map(e=>e.x).join(" "):prev.e.x; const w=txt.split(/\s+/); const tail=w.length>12?"…"+w.slice(-12).join(" "):txt;
-        rows.push(`<p class="cue">Deixa — <i>${esc(prev.k==="dlg"?prev.who:"rubrica")}</i>: ${esc(tail)}</p>`);
+        const txt=(prev.k==="dlg"?prev.parts.filter(e=>e.t==="fala").map(e=>e.x).join(" "):prev.e.x).replace(/\s+/g," "); const w=txt.split(/\s+/); const tail=w.length>12?"…"+w.slice(-12).join(" "):txt;
+        rows.push(`<p class="deixa">Deixa — <i>${esc(prev.k==="dlg"?prev.who:"rubrica")}</i>: ${esc(tail)}</p>`);
       }
       rows.push(dlgHTML(p,g,{...o,cores:false},o.marca?"mine":""));
     } else if(g.k==="cena"){ rows.push({scene:g}); }
@@ -3178,6 +3179,7 @@ document.addEventListener("change",e=>{
   const t=e.target;
   if(t.id==="hubSort"){ S.sort=t.value; refreshGrid(); return; }
   if(t.dataset&&t.dataset.ilink==="play"){ S.linkPlay=t.value; render(); return; }
+  if(t.dataset&&t.dataset.charsel){ navTo(); S.charSel=t.value; renderMain(); scrollTo(0,0); return; }
   const p=cur();
   if(t.dataset.doc){ S.print.docs[t.dataset.doc]=t.checked; saveLocal(); renderMain(); return; }
   if(!p) return;
@@ -3299,7 +3301,7 @@ document.addEventListener("click",async e=>{
     case "askdel": if(S.menu){ S.menu=null; refreshGrid(); } $("#del-"+b.dataset.id).hidden=false; break;
     case "nodel": $("#del-"+b.dataset.id).hidden=true; break;
     case "del": { const id=b.dataset.id; const pp=S.plays[id]; if(!pp) return; S.lastDel={p:pp,wasLast:S.lastId===id}; delete S.plays[id]; delete S.an[id]; if(S.lastId===id) S.lastId=null; saveLocal(); render(); toastBtn(`“${pp.titulo||"Peça sem título"}” foi excluída.`,"Desfazer","undodel"); if(db&&me&&id!=="exemplo"){ try{ await db.collection("data/users/"+me).doc(id).delete(); }catch(_){} } break; }
-    case "tab": goTab(p,b.dataset.k); break;
+    case "tab": if(b.dataset.k==="personagens"&&p.tab==="personagens"&&S.charSel&&window.innerWidth<1000){ navTo(); S.charSel=null; closeLayer(); renderMain(); scrollTo(0,0); break; } goTab(p,b.dataset.k); break;
     case "more": openMore(); break;
     case "guiado": S.guiado=!S.guiado; if(S.guiado) S.focus=currentScene(p); saveLocal(); closeLayer(); render(); break;
     case "gnext": renderMain(); { const t=$("#guide textarea"); if(t) t.focus(); } break;
@@ -3385,7 +3387,7 @@ document.addEventListener("click",async e=>{
     case "addact": { pushUndo(p); p.usaAtos=true; named(p).forEach(s=>s.el.ato=s.el.ato||1); const e2=newScene("",{ato:maxAct(p)+1}); p.els.push(e2); touch(p); renderMain(); openSceneSheet(e2.id); break; }
     case "arc2scenes": { pushUndo(p); const d=p.dev; let made=0; [["Começo",d.comeco],["Desenvolvimento",d.desenv],["Conflito",d.conflitoArco],["Clímax",d.climax],["Final",d.final]].forEach(([t,v])=>{ if(String(v||"").trim()){ p.els.push(newScene(t,{note:v})); made++; } }); if(!made) p.els.push(newScene("Começo")); touch(p); goTab(p,"cenas"); toast("Cenas criadas a partir da estrutura.",true); break; }
     /* personagens */
-    case "selchar": if(b.dataset.id&&window.innerWidth<1000) navTo(); S.charSel=b.dataset.id||null; renderMain(); if(window.innerWidth<1000) scrollTo(0,0); break;
+    case "selchar": { const id=b.dataset.id||null; if(id!==S.charSel&&window.innerWidth<1000) navTo(); S.charSel=id; renderMain(); if(window.innerWidth<1000) scrollTo(0,0); break; }
     case "cadd": { pushUndo(p); const c=newChar(p,""); p.personagens.push(c); S.charSel=c.id; touch(p); renderMain(); setTimeout(()=>{ const ix=p.personagens.indexOf(c); $(`[data-f="personagens.${ix}.nome"]`)?.focus(); },50); break; }
     case "cdelask": $("#cdel").hidden=false; break;
     case "cdelno": $("#cdel").hidden=true; break;
