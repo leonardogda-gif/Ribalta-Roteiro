@@ -1417,22 +1417,38 @@ const MIC_T={H:"Headset",S:"Bastão sem fio",F:"Bastão com fio"};
 const micLabel=m=>!m||m==="-"?"Sem microfone":MIC_T[m[0]]+" "+m.slice(1);
 function micPlan(p){ return memo("mic:"+p.id,()=>{
   const eq=S.equip||{corpo:0,semfio:0,comfio:0}, cap={H:+eq.corpo||0,S:+eq.semfio||0,F:+eq.comfio||0};
-  const sc=named(p), out=[]; let prev={};
-  sc.forEach(s=>{ const cnt={}; for(let i=s.start+1;i<s.end;i++){ const e=p.els[i]; if(e.t==="fala"&&e.x.trim()){ const w=speakerOf(p,i); if(w&&w.trim()) cnt[w.trim()]=(cnt[w.trim()]||0)+1; } }
+  const mics=[]; ["H","S","F"].forEach(t=>{ for(let k=1;k<=cap[t];k++) mics.push(t+k); }); const totalCap=mics.length;
+  const sc=named(p), out=[], persons=new Map();
+  /* 1. quem fala em cada cena (agrupado por ator) */
+  sc.forEach((s,i)=>{ const cnt={}; for(let k=s.start+1;k<s.end;k++){ const e=p.els[k]; if(e.t==="fala"&&e.x.trim()){ const w=speakerOf(p,k); if(w&&w.trim()) cnt[w.trim()]=(cnt[w.trim()]||0)+1; } }
     const people=new Map(); Object.entries(cnt).forEach(([nm,n])=>{ const c=charByName(p,nm); if(c&&c.mic==="nao") return; const key=c&&c.ator.trim()?norm(c.ator):"#"+norm(nm);
-      if(!people.has(key)) people.set(key,{key,ator:c&&c.ator.trim()||"",chars:[],lines:0,mic:null,manual:false}); const o=people.get(key); o.chars.push(c?c.nome:nm); o.lines+=n; });
-    const P=[...people.values()], used=new Set(), ov=s.el.mics||{};
-    P.forEach(o=>{ const m=o.chars.map(n=>ov[n]).find(Boolean); if(m&&(m==="-"||(+m.slice(1)<=cap[m[0]]&&!used.has(m)))){ o.mic=m; o.manual=true; if(m!=="-") used.add(m); } });
-    const auto=P.filter(o=>!o.manual).sort((a,b)=>b.lines-a.lines);
-    const free=t=>{ for(let k=1;k<=cap[t];k++) if(!used.has(t+k)) return t+k; return null; };
-    const left={H:cap.H-[...used].filter(m=>m[0]==="H").length,S:cap.S-[...used].filter(m=>m[0]==="S").length,F:cap.F-[...used].filter(m=>m[0]==="F").length};
-    auto.forEach(o=>{ o.want=left.H>0?"H":left.S>0?"S":left.F>0?"F":null; if(o.want) left[o.want]--; });
-    auto.forEach(o=>{ const pm=prev[o.key]; if(o.want&&pm&&pm[0]===o.want&&!used.has(pm)){ o.mic=pm; used.add(pm); } });
-    auto.forEach(o=>{ if(!o.mic&&o.want){ const m=free(o.want); if(m){ o.mic=m; used.add(m); } } });
-    const ord=m=>!m||m==="-"?99:"HSF".indexOf(m[0])*30+ +m.slice(1);
-    const rows=P.sort((a,b)=>ord(a.mic)-ord(b.mic));
-    out.push({s,rows,falta:rows.filter(o=>!o.mic).length,total:rows.length});
-    prev={}; rows.forEach(o=>{ if(o.mic&&o.mic!=="-") prev[o.key]=o.mic; }); });
+      if(!people.has(key)) people.set(key,{key,ator:c&&c.ator.trim()||"",chars:[],lines:0,mic:null,manual:false,kept:false}); const o=people.get(key); o.chars.push(c?c.nome:nm); o.lines+=n; });
+    const rows=[...people.values()]; out.push({s,i,rows,used:new Set()});
+    rows.forEach(o=>{ if(!persons.has(o.key)) persons.set(o.key,{key:o.key,idx:[],lines:0,manual:false}); const P=persons.get(o.key); P.idx.push(i); P.lines+=o.lines; }); });
+  /* 2. escolhas feitas à mão */
+  out.forEach(x=>{ const ov=x.s.el.mics||{}; x.rows.forEach(o=>{ const m=o.chars.map(n=>ov[n]).find(Boolean); if(m&&(m==="-"||(mics.includes(m)&&!x.used.has(m)))){ o.mic=m; o.manual=true; if(m!=="-") x.used.add(m); persons.get(o.key).manual=true; } }); });
+  /* 3. reserva: quem fala mais fica com o mesmo microfone sem fio do início ao fim da sua participação,
+        desde que isso não deixe faltar microfone em nenhuma cena */
+  const idle=out.map(()=>0), need=out.map(x=>x.rows.length);
+  const wireless=mics.filter(m=>m[0]!=="F");
+  [...persons.values()].filter(P=>!P.manual&&P.idx.length>1).sort((a,b)=>b.lines-a.lines||b.idx.length-a.idx.length).forEach(P=>{
+    const a=P.idx[0], b=P.idx[P.idx.length-1], gaps=[]; for(let i=a;i<=b;i++) if(!P.idx.includes(i)) gaps.push(i);
+    if(gaps.some(i=>totalCap-need[i]-idle[i]<1)) return;
+    const m=wireless.find(m=>{ for(let i=a;i<=b;i++) if(out[i].used.has(m)) return false; return true; }); if(!m) return;
+    for(let i=a;i<=b;i++){ out[i].used.add(m); const o=out[i].rows.find(r=>r.key===P.key); if(o){ o.mic=m; o.kept=true; } }
+    gaps.forEach(i=>idle[i]++); });
+  /* 4. o resto, cena a cena: quem fala mais primeiro; headset, depois sem fio, depois com fio;
+        de preferência um microfone que não estava em uso na cena anterior (evita troca rápida) */
+  const last={};
+  out.forEach((x,i)=>{ const prevUsed=i?out[i-1].used:new Set();
+    x.rows.filter(o=>!o.mic).sort((a,b)=>b.lines-a.lines).forEach(o=>{ const free=mics.filter(m=>!x.used.has(m)); if(!free.length) return;
+      const lm=last[o.key]; let m=lm&&free.includes(lm)&&(i&&out[i-1].rows.some(r=>r.key===o.key&&r.mic===lm))?lm:null;
+      /* preferência: sem fio ainda não usado na peça → sem fio livre na cena anterior → qualquer sem fio → com fio (mesma ordem) */
+      if(!m){ const W=free.filter(f=>f[0]!=="F"), Fw=free.filter(f=>f[0]==="F"), virgem=f=>!out.slice(0,i).some(y=>y.used.has(f));
+        m=W.find(virgem)||W.find(f=>!prevUsed.has(f))||W[0]||Fw.find(virgem)||Fw.find(f=>!prevUsed.has(f))||Fw[0]; }
+      o.mic=m; x.used.add(m); });
+    x.rows.forEach(o=>{ if(o.mic&&o.mic!=="-") last[o.key]=o.mic; }); });
+  out.forEach(x=>{ const ord=m=>!m||m==="-"?99:"HSF".indexOf(m[0])*30+ +m.slice(1); x.rows.sort((a,b)=>ord(a.mic)-ord(b.mic)); x.falta=x.rows.filter(o=>!o.mic).length; x.total=x.rows.length; });
   /* caminho de cada microfone: períodos com a mesma pessoa e as passagens entre elas */
   const uses={}; out.forEach((x,i)=>x.rows.forEach(o=>{ if(o.mic&&o.mic!=="-") (uses[o.mic]=uses[o.mic]||[]).push({i,s:x.s,o}); }));
   const ord=m=>"HSF".indexOf(m[0])*30+ +m.slice(1), paths=[], swaps=[];
@@ -1455,9 +1471,9 @@ function micsHTML(p){ const eq=S.equip||{}, M=micPlan(p), sc=named(p), tot=M.cap
     ${badScenes.length?`<span>⚠ Faltam microfones ${badScenes.length>1?"nas cenas":"na cena"} ${badScenes.map(x=>`${x.s.n} (${x.falta})`).join(", ")}.</span>`:M.max.total?`<span>✓ Dá para fazer com o que vocês têm.</span>`:""}
     ${M.swaps.length?`<span>${pl(M.swaps.length,"troca","trocas")} de microfone na peça${M.rapidas?`, ${M.rapidas} ${M.rapidas>1?"rápidas":"rápida"} (entre cenas seguidas)`:""}. Veja o mapa completo abaixo.</span>`:""}</div>
   ${speakers.length?`<div style="display:grid;gap:6px"><b style="font-size:14px">Quem não precisa de microfone? <span class="note" style="font-weight:400">ex.: narração gravada</span></b><div class="chips">${speakers.map(c=>`<button class="chip ${c.mic==="nao"?"on":""}" data-a="micnao" data-id="${c.id}" aria-pressed="${c.mic==="nao"}">${c.mic==="nao"?"✓ ":""}${esc(c.nome)}</button>`).join("")}</div></div>`:""}
-  <p class="note" style="margin:0">Quem tem mais falas fica com headset; quem fala pouco, com bastão. A mesma pessoa mantém o microfone entre cenas sempre que dá. Troque à mão onde quiser.</p>
+  <p class="note" style="margin:0">Quem fala em mais de uma cena fica com o mesmo microfone do começo ao fim da participação (quem tem mais falas escolhe primeiro), desde que não falte microfone em nenhuma cena. Os outros usam o que sobra, de preferência um microfone livre na cena anterior, para evitar troca rápida. Troque à mão onde quiser.</p>
   ${M.scenes.filter(x=>x.total).map(x=>`<div class="lscene"><div class="lscene-h"><span class="eyebrow">Cena ${x.s.n}</span><b>${esc(x.s.el.x||"Sem nome")}</b><span class="spacer"></span><span class="pill ${x.falta?"warn":"ok"}">${x.falta?`⚠ faltam ${x.falta}`:`✓ ${x.total} de ${tot}`}</span></div>
-    ${x.rows.map(r=>`<div class="lrowf" style="grid-template-columns:minmax(0,1fr) auto"><span style="min-width:0"><b>${esc(personName(r))}</b><small>${pl(r.lines,"fala","falas")}${r.manual?" · escolhido à mão":""}</small></span>
+    ${x.rows.map(r=>`<div class="lrowf" style="grid-template-columns:minmax(0,1fr) auto"><span style="min-width:0"><b>${esc(personName(r))}</b><small>${pl(r.lines,"fala","falas")}${r.manual?" · escolhido à mão":r.kept?" · fica com o mesmo microfone":""}</small></span>
       <select data-mic="${x.s.el.id}|${esc(r.chars[0])}" aria-label="Microfone de ${esc(r.chars[0])}" style="width:auto;max-width:190px">${opts(r)}</select>
       <span style="grid-column:1/-1;font-size:13px;font-weight:700;color:${r.mic?"var(--ok)":"var(--warn)"}">${r.mic?micLabel(r.mic):"⚠ Sem microfone disponível"}</span></div>`).join("")}</div>`).join("")||`<div class="empty">Quando houver falas no roteiro, a distribuição aparece aqui.</div>`}
   ${M.paths.length?`<div class="card"><div class="sec-title"><h3 style="font-size:17px">Mapa de trocas</h3><span class="note">o caminho de cada microfone na peça</span></div>
@@ -3249,7 +3265,7 @@ document.addEventListener("change",e=>{
   const t=e.target;
   if(t.id==="hubSort"){ S.sort=t.value; refreshGrid(); return; }
   if(t.dataset&&t.dataset.ilink==="play"){ S.linkPlay=t.value; render(); return; }
-  if(t.dataset&&t.dataset.eq){ S.equip=S.equip||{}; S.equip[t.dataset.eq]=Math.max(0,Math.min(30,parseInt(t.value)||0)); saveLocal(); renderMain(); return; }
+  if(t.dataset&&t.dataset.eq){ S.equip=S.equip||{}; const v=Math.max(0,Math.min(30,parseInt(t.value)||0)); if(S.equip[t.dataset.eq]===v) return; S.equip[t.dataset.eq]=v; saveLocal(); setTimeout(()=>renderMain(),0); return; }
   if(t.dataset&&t.dataset.charsel){ navTo(); S.charSel=t.value; renderMain(); scrollTo(0,0); return; }
   const p=cur();
   if(t.dataset&&t.dataset.mic){ const [sid,nm]=t.dataset.mic.split("|"); if(!p) return; const sc=sceneById(p,sid); if(!sc) return; pushUndo(p); sc.el.mics=sc.el.mics||{}; if(t.value) sc.el.mics[nm]=t.value; else delete sc.el.mics[nm]; touch(p); renderMain(); return; }
