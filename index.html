@@ -190,7 +190,7 @@ textarea.in{resize:vertical;min-height:76px}
 .drag-ghost{position:fixed;z-index:80;pointer-events:none;opacity:.92;transform:rotate(-2deg);margin:0}
 
 /* ---------- roteiro ---------- */
-.side{display:none;align-self:start;position:sticky;top:130px;max-height:calc(100vh - 150px);overflow:auto;gap:18px}
+.side{display:none;align-self:start;position:sticky;top:calc(var(--hdr,130px) + 6px);max-height:calc(100vh - var(--hdr,130px) - 24px);overflow:auto;gap:18px}
 @media (min-width:1000px){.split .side{display:grid}}
 .side-sec{display:grid;gap:4px}
 .nav-item{display:flex;gap:8px;align-items:baseline;text-align:left;border:0;background:none;padding:7px 8px;border-radius:9px;width:100%}
@@ -208,7 +208,7 @@ textarea.in{resize:vertical;min-height:76px}
 .typebar button.on{background:var(--brand);color:var(--brand-ink)}
 .typebar .sep{width:1px;align-self:stretch;background:var(--line);margin:2px 4px;flex:none}
 .typebar .ai-btn{color:var(--spot-ink);display:flex;gap:6px;align-items:center}
-.bar-wrap{position:sticky;top:124px;z-index:10;display:grid;gap:6px;justify-items:center;min-width:0}
+.bar-wrap{position:sticky;top:calc(var(--hdr,124px) + 6px);z-index:10;display:grid;gap:6px;justify-items:center;min-width:0}
 .hint{font-size:12px;color:var(--muted);text-align:center;max-width:640px}
 .sugs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .sugs button{border:1.5px solid var(--line);background:var(--page);border-radius:999px;padding:5px 11px;font-weight:700;font-size:14px;display:flex;gap:6px;align-items:center;font-family:var(--f-script);text-transform:uppercase;min-height:36px}
@@ -531,9 +531,7 @@ body{overflow-x:clip}
 /* IA: presente, mas abaixo da ação principal */
 .btn.spot{background:var(--spot-soft);color:var(--spot-ink);border-color:var(--spot)}
 .typebar .ai-btn{color:var(--muted)}
-/* navegação em três grupos */
-.stages .grp{flex:none;align-self:center;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 2px 0 14px;margin-left:6px;border-left:1px solid var(--line);opacity:.85}
-.more .grp-h{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:6px 0 -2px}
+
 /* próximo passo: uma recomendação por vez */
 .nextstep{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;border-radius:16px;padding:16px 18px;background:var(--brand-soft);border:1.5px solid var(--brand)}
 .nextstep b{font-family:var(--f-display);font-size:20px;display:block;overflow-wrap:anywhere}
@@ -547,12 +545,6 @@ body{overflow-x:clip}
 .sortbox select{width:auto;min-height:40px;padding:6px 10px;font-weight:400;color:var(--ink)}
 /* abas com "Mais opções" */
 .tabrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-details.tabmore{position:relative}
-details.tabmore summary{list-style:none;cursor:pointer;border:1.5px dashed var(--line);border-radius:999px;padding:7px 14px;font-weight:700;font-size:14px;min-height:40px;display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
-details.tabmore summary::-webkit-details-marker{display:none}
-details.tabmore[open] summary{border-style:solid;color:var(--ink)}
-details.tabmore .ptabs{flex-wrap:wrap;margin-top:8px}
-@media (max-width:640px){.ptabs.main{flex-wrap:nowrap}}
 /* cartão de cena: ação principal clara, ações secundárias no menu */
 .scard .sc-acts{display:flex;gap:6px;align-items:center;padding:0 12px 12px}
 .scard .menu{top:46px}
@@ -580,11 +572,43 @@ details.more-d summary small{font-weight:400;color:var(--muted);margin-left:6px}
 .idea-card{background:var(--surface);border-radius:14px;box-shadow:var(--shadow);padding:12px;display:grid;gap:8px;grid-template-columns:minmax(0,1fr)}
 .idea-card textarea{background:transparent;border-color:transparent;font-size:16px;min-height:0;resize:none}
 .idea-card textarea:focus{border-color:var(--line);background:var(--bg)}
+button.saved{border:0;background:none;padding:6px 4px;border-radius:8px;cursor:pointer;min-height:36px}
+.saved.warn{color:var(--warn)}.saved.warn i{background:var(--warn)}.saved.warn span{display:inline!important}
 .saved.err{color:var(--danger)}.saved.err i{background:var(--danger)}.saved.err span{display:inline!important}
 .mdur{font-family:var(--f-ui);font-size:12px;font-weight:700;border:0;border-radius:999px;padding:2px 9px;margin:2px 0 0 8px;background:var(--canvas);color:var(--muted);flex:none;cursor:pointer;white-space:nowrap;font-style:normal;text-transform:none;align-self:center}
 .mdur.warn{background:var(--warn-soft);color:var(--warn)}
 .el-musica{flex-wrap:wrap}.el-musica textarea{flex:1 1 calc(100% - 96px)}.el-musica .mdur{margin-left:auto}
-@media (max-width:760px){.bnav{grid-template-columns:repeat(6,minmax(0,1fr))}.bnav button{font-size:10.5px;padding:6px 0;letter-spacing:-.1px}.bnav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+@media (max-width:760px){.bnav{grid-template-columns:repeat(5,minmax(0,1fr))}.bnav button{font-size:10.5px;padding:6px 0;letter-spacing:-.1px}.bnav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+/* ---------- modo foco: só a folha, a cena atual e os tipos de linha ---------- */
+body.foco .stages,body.foco .subnav,body.foco .side,body.foco .hint,body.foco .bnav,body.foco #guide{display:none!important}
+body.foco .work.split{grid-template-columns:minmax(0,1fr)!important}
+body.foco .typebar .ai-btn.on{color:var(--brand)}
+@media (max-width:999px){body.foco .bar-wrap{bottom:0;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}}
+@media (min-width:1000px){body.foco .scrow{display:flex}}
+/* ---------- navegação por momentos ---------- */
+.only-narrow{display:none!important}
+@media (max-width:999px){.only-narrow{display:flex!important}.hide-narrow{display:none!important}}
+.rpick{padding:0;margin-top:-4px;width:100%;max-width:100%;min-width:0}.rpick .scpick{width:0}
+.subnav{display:flex;gap:6px;padding:0 12px 8px;max-width:1280px;margin:0 auto}
+.subnav button{flex:1 1 0;min-width:0;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 8px;font-weight:700;font-size:14px;min-height:38px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+.subnav button.on{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+@media (min-width:761px){.subnav{justify-content:flex-start}.subnav button{flex:0 1 auto;padding:6px 16px}}
+@media (max-width:760px){.subnav button{font-size:13px;padding:6px 4px}body.typing .subnav{display:none}}
+.scrow{display:flex;gap:6px;align-items:center;padding:0 12px 8px;max-width:1280px;margin:0 auto}
+.scrow:empty{display:none}
+.scrow .scpick{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:6px 12px;min-height:40px;font-weight:700;text-align:left}
+.scrow .scpick span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scrow .scpick b{font-family:var(--f-script);color:var(--brand);flex:none}
+@media (min-width:1000px){.scrow:not(.rpick){display:none}}
+[data-wrap]{scroll-margin-top:calc(var(--hdr,140px) + 14px)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.mcard{display:flex;align-items:center;gap:12px;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:16px;padding:14px 16px;min-height:96px;box-shadow:var(--shadow)}
+.mcard:hover{border-color:var(--brand)}
+.mcard .mc-t{flex:1;min-width:0;display:grid;gap:3px}
+.mcard b{font-family:var(--f-display);font-size:18px}
+.mcard small{color:var(--muted);font-size:13px}
+.mcard .mc-s{font-size:13px;font-weight:700;color:var(--spot-ink)}
+.mcard .mc-s.ok{color:var(--ok)}
 .p-item .t small.fn{white-space:normal;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
 button.doc-title{border:0;background:none;text-align:left;padding:4px 6px;border-radius:8px;color:inherit}
 button.doc-title:hover{background:var(--bg)}
@@ -612,15 +636,26 @@ const T={
 };
 const CYCLE=["acao","personagem","parentese","fala","cena","musica","transicao"];
 const BAR=["cena","personagem","fala","acao","parentese","musica","transicao"];
-/* três grupos ajudam a entender o fluxo, sem obrigar uma ordem */
+/* navegação por momentos: Peça · Escrever · Ensaiar · Montar · Imprimir.
+   p.tab continua guardando a tela (os dados salvos não mudam); o momento é derivado dela. */
 const STAGES=[
-  {k:"geral",l:"Visão geral",g:""},{k:"historia",l:"História",g:"Criar"},{k:"personagens",l:"Personagens",g:"Criar"},{k:"cenas",l:"Cenas",g:"Criar"},
-  {k:"roteiro",l:"Roteiro",g:"Criar"},{k:"ensaio",l:"Ensaio",g:"Preparar"},{k:"producao",l:"Produção",g:"Preparar"},{k:"documentos",l:"Documentos",g:"Finalizar"}];
-const GROUPS=["Criar","Preparar","Finalizar"];
-const eyebrowOf=k=>{ const s=STAGES.find(x=>x.k===k); return s&&s.g?`${s.g} · ${s.l}`:"Visão geral"; };
-const MORE=["ensaio","producao","documentos"];
-/* atalho direto para a Iluminação (ela continua morando dentro de Produção) */
-const luzNavBtn=p=>{ const on=p.tab==="producao"&&S.ptab==="luz"; return `<button class="${on?"on":""}" data-a="luzgo" data-k="luz" ${on?'aria-current="page"':""}>Iluminação</button>`; };
+  {k:"geral",l:"Visão geral",g:"Peça"},{k:"historia",l:"História",g:"Escrever"},{k:"personagens",l:"Personagens",g:"Escrever"},{k:"cenas",l:"Cenas",g:"Escrever"},
+  {k:"roteiro",l:"Roteiro",g:"Escrever"},{k:"ensaio",l:"Ensaio",g:"Ensaiar"},{k:"producao",l:"Montar",g:"Montar"},{k:"documentos",l:"Documentos",g:"Imprimir"}];
+const MOMENTS=[{k:"peca",l:"Peça",tab:"geral",ic:"geral"},{k:"escrever",l:"Escrever",tab:null,ic:"roteiro"},{k:"ensaiar",l:"Ensaiar",tab:"ensaio",ic:"ensaio"},{k:"montar",l:"Montar",tab:"producao",ic:"producao"},{k:"imprimir",l:"Imprimir",tab:"documentos",ic:"documentos"}];
+const WRITE=["historia","personagens","cenas","roteiro"];
+const momentOf=t=>t==="geral"?"peca":WRITE.includes(t)?"escrever":t==="ensaio"?"ensaiar":t==="producao"?"montar":"imprimir";
+/* Montar: cartões; cada cartão abre uma tela com as suas partes */
+const MONTAR=[
+  {k:"falta",l:"O que falta",d:"Tudo para separar antes de apresentar",subs:[["lista","Por tipo"],["necessidades","Por cena"]]},
+  {k:"elenco",l:"Elenco e microfones",d:"Quem faz quem, quem está em cada cena e microfones",subs:[["elenco","Quem faz quem"],["matriz","Quem está em cada cena"],["mics","Microfones"]]},
+  {k:"figobj",l:"Figurino e objetos",d:"Roupas de cada personagem e objetos de cena",subs:[["figurino","Figurino"],["objetos","Objetos"]]},
+  {k:"cenario",l:"Cenário",d:"O que fica no palco em cada cena",subs:[["cenario","Cenário"]]},
+  {k:"luz",l:"Luz",d:"Mudanças de luz por cena e ajustes técnicos",subs:[["luz","Luz"]]},
+  {k:"som",l:"Som e músicas",d:"Músicas com duração e link, e outros sons",subs:[["som","Som e músicas"]]},
+  {k:"tec",l:"Para os técnicos",d:"Matriz técnica e observações para a equipe",subs:[["mtec","Matriz técnica"],["tecnica","Observações"]]}];
+const montarOf=t=>MONTAR.find(g=>g.subs.some(x=>x[0]===t));
+const partLabel=p=>{ if(p.tab==="producao"){ const g=montarOf(S.ptab); return g?"Montar › "+g.l:"Montar"; } const m=MOMENTS.find(x=>x.k===momentOf(p.tab)); return m.k==="escrever"?"Escrever › "+STAGES.find(x=>x.k===p.tab).l:m.l; };
+const eyebrowOf=k=>{ const s=STAGES.find(x=>x.k===k); return s?(s.g==="Escrever"?`Escrever · ${s.l}`:s.g):"Peça"; };
 const STATUS={nao:{i:"○",l:"Não ensaiada"},ensaio:{i:"◐",l:"Em ensaio"},ok:{i:"✓",l:"Ensaiada"}};
 const stIcon=k=>k==="ok"?'<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3.2 3L13 4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   :k==="ensaio"?'<svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>'
@@ -1315,7 +1350,7 @@ function migrate(o){
 /* =====================================================================
    ESTADO E GRAVAÇÃO (local sempre; nuvem quando aberto no Claude)
    ===================================================================== */
-let S={plays:{},lastId:null,view:"home",guiado:false,focus:0,curId:null,sceneSel:null,charSel:null,ptab:"lista",rview:"cena",rfs:18,rchar:"",
+let S={plays:{},lastId:null,view:"home",guiado:false,focus:0,curId:null,sceneSel:null,charSel:null,foco:false,ptab:"hub",lastWrite:null,viewSc:null,rview:"cena",rfs:18,rchar:"",
   q:"",sort:"recentes",menu:null,renaming:null,showLong:false,an:{},dismiss:new Set(),ltab:"cues",lsel:null,scMenu:null,open:{},ideas:[],equip:null,skip:{},saveErr:false,
   print:{docs:{roteiro:true,porCena:false,falas:false,personagem:false,ficha:false,tecnica:false,necessidades:false,figurinos:false,objetos:false,musicas:false,cenas:false,ensaio:false,luz:false,operador:false,mtec:false,som:false,mic:false},
     cenaPagina:false,cores:false,numerar:true,marca:true,tamanho:"12",atorSel:"todos",atorNome:"todos",cenaSel:""}};
@@ -1353,17 +1388,37 @@ function saveLocal(){ let ok=true; try{ localStorage.setItem(LS,JSON.stringify({
   const was=S.saveErr; S.saveErr=!ok; if(!ok&&!was) toast("Não foi possível salvar neste aparelho. O navegador está sem espaço ou em modo anônimo."); if(was!==S.saveErr) setSaved(false); return ok; }
 window.addEventListener("beforeunload",e=>{ const ok=saveLocal(); if(!ok){ e.preventDefault(); e.returnValue=""; } });
 let saveT=null; const pending=new Set();
-function touch(p){ p.updatedAt=Date.now(); S.lastId=p.id; setSaved(true); pending.add(p.id); clearTimeout(saveT); saveT=setTimeout(flush,700); }
+function touch(p){ p.updatedAt=Date.now(); S.lastId=p.id; pending.add(p.id); clearTimeout(saveT); saveT=setTimeout(flush,700); setSaved(true); }
+/* ===== salvamento: o indicador só diz o que foi comprovado =====
+   Salvando…               há alteração esperando para ser gravada
+   Salvo neste aparelho    a gravação no navegador deu certo (sem nuvem conectada)
+   Sincronizando… / Sincronizado   só quando a nuvem está conectada (dentro do Claude)
+   Falha ao salvar         o navegador recusou a gravação local
+   Falha na sincronização  salvo no aparelho, mas a nuvem não confirmou; toque para tentar de novo
+   A nuvem grava uma peça por vez, sempre com o estado mais recente, então uma gravação antiga não sobrescreve uma nova. */
+const SYNC={q:new Set(),fail:new Set(),running:false,okAt:0,localAt:0};
+async function runSync(){ if(SYNC.running||!(db&&me)) return; SYNC.running=true; setSaved(false);
+  while(SYNC.q.size){ const id=[...SYNC.q][0]; SYNC.q.delete(id); const p=S.plays[id]; if(!p||p.exemplo){ SYNC.fail.delete(id); continue; }
+    try{ await db.collection("data/users/"+me).doc(id).set({json:JSON.stringify(p),updatedAt:p.updatedAt}); SYNC.fail.delete(id); SYNC.okAt=Date.now(); }
+    catch(e){ SYNC.fail.add(id); } }
+  SYNC.running=false; setSaved(false); }
 async function flush(){
-  clearTimeout(saveT); saveLocal();
+  clearTimeout(saveT); saveT=null;
+  const ok=saveLocal(); if(ok) SYNC.localAt=Date.now();
   const ids=[...pending]; pending.clear();
-  if(db&&me) for(const id of ids){ const p=S.plays[id]; if(!p||p.exemplo) continue;
-    try{ await db.collection("data/users/"+me).doc(id).set({json:JSON.stringify(p),updatedAt:p.updatedAt}); }catch(e){} }
+  if(db&&me){ ids.forEach(id=>SYNC.q.add(id)); runSync(); }
   setSaved(false);
 }
-function setSaved(busy){ const el=$("#saved"); if(!el) return; el.classList.toggle("busy",busy&&!S.saveErr); el.classList.toggle("err",!!S.saveErr);
-  el.lastElementChild.textContent=S.saveErr?"Não salvo":busy?"Salvando…":"Tudo salvo ✓";
-  el.title=S.saveErr?"O navegador não deixou salvar. Libere espaço ou saia do modo anônimo.":busy?"":"Salvo às "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}); }
+function savedInfo(busy){ const hm=t=>t?new Date(t).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"";
+  if(S.saveErr) return {cls:"err",t:"Falha ao salvar",tip:"O navegador não deixou salvar neste aparelho (sem espaço ou modo anônimo). Não feche a página: baixe o roteiro em Imprimir para não perder."};
+  if(busy) return {cls:"busy",t:"Salvando…",tip:"Gravando as últimas alterações."};
+  if(db&&me){ if(SYNC.running||SYNC.q.size) return {cls:"busy",t:"Sincronizando…",tip:`Salvo neste aparelho às ${hm(SYNC.localAt)}. Enviando para a nuvem.`};
+    if(SYNC.fail.size) return {cls:"warn",t:"Falha na sincronização",tip:`Salvo neste aparelho às ${hm(SYNC.localAt)}, mas a nuvem não confirmou. Toque para tentar de novo.`,retry:true};
+    return {cls:"",t:"Sincronizado",tip:`Salvo neste aparelho e na nuvem às ${hm(SYNC.okAt||SYNC.localAt)}.`}; }
+  return {cls:"",t:"Salvo neste aparelho",tip:SYNC.localAt?`Salvo no navegador deste aparelho às ${hm(SYNC.localAt)}.`:"As peças ficam salvas no navegador deste aparelho."}; }
+const savedHTML=()=>{ const st=savedInfo(pending.size>0||!!saveT); return `<button class="saved ${st.cls}" id="saved" role="status" data-a="savedinfo" title="${esc(st.tip)}" aria-label="${esc(st.t+". "+st.tip)}"><i></i><span>${esc(st.t)}</span></button>`; };
+function setSaved(busy){ const el=$("#saved"); if(!el) return; const st=savedInfo(busy||pending.size>0||!!saveT);
+  el.className="saved "+st.cls; el.lastElementChild.textContent=st.t; el.title=st.tip; el.setAttribute("aria-label",st.t+". "+st.tip); }
 async function connect(){
   try{
     const c=window.claude; if(!c||!c.use) return;
@@ -1587,40 +1642,42 @@ function renderRaw(){
   if(S.view==="ideas"){ app.innerHTML=ideasHTML(); autosizeAll(); return; }
   const p=cur(); if(!p){ S.view="home"; app.innerHTML=homeHTML(); return; }
   ensureDefaults(p);
-  const st=STAGES.find(s=>s.k===p.tab);
-  app.innerHTML=`<header class="top"><div class="top-row">
+  const mo=momentOf(p.tab), isW=mo==="escrever"; document.body.classList.toggle("foco",!!S.foco&&p.tab==="roteiro");
+  app.innerHTML=`<header class="top" id="topbar"><div class="top-row">
       <button class="btn sm icon ghost" data-a="back" aria-label="Voltar" title="Voltar">${I.back}</button>
       <button class="brand" data-a="home" aria-label="Minhas peças" title="Minhas peças">${LOGO}<span class="hide-sm">Ribalta</span></button>
-      <button class="doc-title" data-a="tab" data-k="geral" title="Visão geral da peça"><b id="docTitle">${esc(p.titulo||"Peça sem título")}</b><small class="only-sm">${st.l}</small></button>
-      <div class="saved ${S.saveErr?"err":""}" id="saved" role="status"><i></i><span>${S.saveErr?"Não salvo":"Tudo salvo ✓"}</span></div>
+      <button class="doc-title" data-a="moment" data-k="peca" title="Resumo da peça"><b id="docTitle">${esc(p.titulo||"Peça sem título")}</b><small id="where">${esc(partLabel(p))}</small></button>
+      ${savedHTML()}
       <button class="btn sm icon ghost" data-a="undo" id="undoBtn" aria-label="Desfazer" title="Desfazer" ${undo.length?"":"disabled"}>${I.undo}</button>
       <button class="btn sm ghost" data-a="capture" aria-label="Anotar ideia" title="Anotar uma ideia rápida">${I.bulb}<span class="hide-sm">Anotar ideia</span></button>
       ${sample?`<button class="btn sm ghost" data-a="assist" aria-label="Assistente de IA" title="Assistente de IA">${I.spark}<span class="hide-sm">Assistente</span></button>`:""}
-      <button class="btn sm icon ghost hide-sm" data-a="more" aria-label="Mais opções" title="Minhas ideias, modo guiado e outras opções">${I.more}</button>
+      <button class="btn sm icon ghost" data-a="more" aria-label="Mais opções" title="Minhas ideias, modo guiado e outras opções">${I.more}</button>
     </div>
-    <nav class="stages" aria-label="Áreas da peça">${STAGES.map((s,i)=>{ const on=p.tab===s.k&&!(s.k==="producao"&&S.ptab==="luz"); return `${s.g&&s.g!==(STAGES[i-1]||{}).g?`<span class="grp" aria-hidden="true">${s.g}</span>`:""}<button class="${on?"on":""}" data-a="tab" data-k="${s.k}" ${on?'aria-current="page"':""}>${s.l}</button>${s.k==="producao"?luzNavBtn(p):""}`; }).join("")}</nav></header>
+    <nav class="stages" aria-label="Momentos da peça">${MOMENTS.map(m=>`<button class="${mo===m.k?"on":""}" data-a="moment" data-k="${m.k}" ${mo===m.k?'aria-current="page"':""}>${m.l}</button>`).join("")}</nav>
+    ${isW?`<nav class="subnav" aria-label="Partes da escrita">${WRITE.map(k=>`<button class="${p.tab===k?"on":""}" data-a="tab" data-k="${k}" ${p.tab===k?'aria-current="page"':""}>${STAGES.find(x=>x.k===k).l}</button>`).join("")}</nav>`:""}
+    ${p.tab==="roteiro"?`<div class="scrow" id="scrow"></div>`:""}</header>
     <main class="work" id="work"></main>
-    <nav class="bnav" aria-label="Áreas">${[["geral","Início"],["historia","História"],["personagens","Personagens"],["cenas","Cenas"],["roteiro","Roteiro"]].map(([k,l])=>`<button class="${p.tab===k?"on":""}" data-a="tab" data-k="${k}" ${p.tab===k?'aria-current="page"':""}>${I[k]}<span>${l}</span></button>`).join("")}
-      <button class="${MORE.includes(p.tab)?"on":""}" data-a="more" aria-label="Mais áreas">${I.more}<span>${MORE.includes(p.tab)?esc(p.tab==="producao"&&S.ptab==="luz"?"Luz":st.l):"Mais"}</span></button></nav>`;
+    <nav class="bnav" aria-label="Momentos">${MOMENTS.map(m=>`<button class="${mo===m.k?"on":""}" data-a="moment" data-k="${m.k}" ${mo===m.k?'aria-current="page"':""}>${I[m.ic]}<span>${m.l}</span></button>`).join("")}</nav>`;
   renderMain();
 }
 function renderMain(){ withMemo(renderMainRaw); }
+function setHdr(){ const t=$("#topbar"); if(t) document.documentElement.style.setProperty("--hdr",t.offsetHeight+"px"); }
 function renderMainRaw(){
   const p=cur(), w=$("#work"); if(!p||!w) return;
   const ub=$("#undoBtn"); if(ub) ub.disabled=!undo.length;
   w.className="work"+(p.tab==="roteiro"?" split":"");
   const guide=S.guiado?`<div id="guide">${guideHTML(p)}</div>`:"";
-  if(p.tab==="roteiro"){ w.innerHTML=`<aside class="side" id="side"></aside><div class="col">${guide}<div class="bar-wrap" id="barwrap"></div><div class="page-wrap"><div class="page ${S.guiado?"cores":""}" id="page"></div></div></div>`; renderSide(); renderBar(); renderPage(); }
+  if(p.tab==="roteiro"){ w.innerHTML=`<aside class="side" id="side"></aside><div class="col">${guide}<div class="bar-wrap" id="barwrap"></div><div class="page-wrap"><div class="page ${S.guiado?"cores":""}" id="page"></div></div></div>`; renderSide(); renderBar(); renderPage(); S.viewSc=null; setTimeout(()=>updScRow(true),0); }
   else { const fn={geral:geralHTML,historia:historiaHTML,personagens:personagensHTML,cenas:cenasHTML,ensaio:ensaioHTML,producao:producaoHTML,documentos:documentosHTML}[p.tab];
     w.innerHTML=`<div class="col">${guide}${fn(p)}</div>`; }
-  autosizeAll();
+  autosizeAll(); setHdr();
 }
 /* ===== voltar: o histórico do navegador acompanha as telas do app =====
    Cada tela (e cada painel aberto por cima) vira uma entrada no histórico.
    O voltar do celular e a seta do topo desfazem o último passo. */
 const NAV=[]; let skipPop=0;
-const snap=()=>{ const p=cur(); return {view:S.view,id:S.lastId,tab:p?p.tab:null,charSel:S.charSel}; };
-const sameSnap=(a,b)=>a&&b&&!a.layer&&a.view===b.view&&a.id===b.id&&a.tab===b.tab&&a.charSel===b.charSel;
+const snap=()=>{ const p=cur(); return {view:S.view,id:S.lastId,tab:p?p.tab:null,charSel:S.charSel,ptab:S.ptab}; };
+const sameSnap=(a,b)=>a&&b&&!a.layer&&a.view===b.view&&a.id===b.id&&a.tab===b.tab&&a.charSel===b.charSel&&(a.tab!=="producao"||a.ptab===b.ptab);
 function hpush(){ try{ history.pushState({rb:NAV.length},""); }catch(e){} }
 function navTo(){ const s=snap(), top=NAV[NAV.length-1];
   if(top&&top.layer&&$("#layer").innerHTML){ NAV[NAV.length-1]=s; return; }
@@ -1641,18 +1698,20 @@ function goBackCore(){
   if(top.view==="new"){ S.view="new"; render(); scrollTo(0,0); return; }
   if(top.view==="ideas"){ S.view="ideas"; render(); scrollTo(0,0); return; }
   S.view="edit"; S.lastId=top.id; const p=cur(); if(!p){ toHome(); return; }
-  p.tab=top.tab; S.charSel=top.charSel; keep(); render(); scrollTo(0,0);
+  p.tab=top.tab; S.charSel=top.charSel; if(top.ptab) S.ptab=top.ptab; keep(); render(); if(p.tab==="roteiro") revealPos(p,true); else scrollTo(0,0);
 }
 function navBack(){ if(NAV.length){ try{ history.back(); return; }catch(e){} } goBackCore(); }
 window.addEventListener("popstate",()=>{ if(skipPop>0){ skipPop--; return; } goBackCore(); });
 try{ history.replaceState({rb:0},""); }catch(e){}
+/* o app controla a rolagem: o voltar não deve devolver a página para uma posição antiga */
+try{ history.scrollRestoration="manual"; }catch(e){}
 /* navegar não conta como edição: guarda a posição sem mudar a data de última edição */
-function goTab(p,k){ if(p.tab!==k) navTo(); p.tab=k; keep(); closeLayer(); render(); scrollTo(0,0); }
+function goTab(p,k){ if(p.tab!==k) navTo(); p.tab=k; if(WRITE.includes(k)) S.lastWrite=k; keep(); closeLayer(); render(); if(k==="roteiro") revealPos(p,true); else scrollTo(0,0); }
 function setPos(p,sceneId){ if(p&&sceneId&&p.lastScene!==sceneId){ p.lastScene=sceneId; keep(); } }
 function restorePos(p){ S.sceneSel=null; S.curId=null; S.focus=0; const s=p.lastScene&&sceneById(p,p.lastScene); if(s){ S.sceneSel=s.el.id; S.curId=s.el.id; S.focus=Math.max(0,scenes(p).findIndex(x=>x.el===s.el)); } }
-function revealPos(p){ const id=p.lastScene; let el=null;
+function revealPos(p,quiet){ const id=p.lastScene; let el=null;
   if(id&&p.tab==="roteiro") el=$(`[data-wrap="${id}"]`); else if(id&&p.tab==="cenas") el=$(`.scard[data-sid="${id}"]`);
-  if(el){ el.scrollIntoView({block:"center"}); el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"),1900); } else scrollTo(0,0); }
+  if(el){ el.scrollIntoView({block:p.tab==="roteiro"?"start":"center"}); if(!quiet){ el.classList.add("flash"); setTimeout(()=>el.classList.remove("flash"),1900); } } else scrollTo(0,0); if(p.tab==="roteiro") setTimeout(updScRow,30); }
 /* recolhíveis guardam o estado aberto/fechado entre redesenhos da tela */
 const ko=(id,def)=>`data-keep="${id}" ${(S.open[id]??def)?"open":""}`;
 const fld=(path,label,val,hint="",multi=false,ph="",type="text")=>`<label class="f">${label}${hint?`<span class="h">${hint}</span>`:""}${multi?`<textarea class="in" data-f="${path}" placeholder="${esc(ph)}">${esc(val)}</textarea>`:`<input type="${type}" data-f="${path}" value="${esc(val)}" placeholder="${esc(ph)}" ${type==="number"?'min="0" step="0.5" inputmode="decimal"':""}>`}</label>`;
@@ -1824,7 +1883,7 @@ function nextSteps(p){
   return out;
 }
 function nextStep(p){ const sk=S.skip[p.id]||[]; return nextSteps(p).find(x=>!sk.includes(x.k))||null; }
-const AREAS_GO=[["historia","História"],["personagens","Personagens"],["cenas","Cenas"],["roteiro","Roteiro"],["ensaio","Ensaio"],["producao","Produção"],["luz","Iluminação"],["documentos","Documentos"]];
+const AREAS_GO=[["historia","História"],["personagens","Personagens"],["cenas","Cenas"],["roteiro","Roteiro"],["ensaio","Ensaiar"],["producao","Montar"],["luz","Luz"],["documentos","Imprimir"]];
 function nextHTML(p){ const n=nextStep(p), open=S.open["nx-areas"];
   const areas=`<div class="chips" style="grid-column:1/-1">${AREAS_GO.map(([k,l])=>k==="luz"?`<button class="chip" data-a="luzgo" data-k="luz">${l}</button>`:`<button class="chip" data-a="tab" data-k="${k}">${l}</button>`).join("")}</div>`;
   if(!n) return `<div class="nextstep"><div style="min-width:0"><span class="eyebrow">Sugestões</span><b>Sem sugestões agora</b><p>Escolha por onde quer continuar.</p></div><button class="btn sm ghost" data-a="nxreset">Mostrar sugestões de novo</button>${areas}</div>`;
@@ -2078,6 +2137,8 @@ function openSceneSheet(id){
         return `<label class="chip" style="${on?`border-color:${c.cor}`:""}"><input type="checkbox" data-a="scextra" data-id="${id}" data-n="${esc(c.nome)}" ${on?"checked":""} ${speaks?"disabled":""}><span class="dot" style="background:${c.cor}"></span>${esc(c.nome)}${speaks?' <span class="note">fala</span>':""}</label>`; }).join("")||'<span class="note">Crie personagens primeiro.</span>'}</div></div>
     ${ideasBlock(p,"scene",id)}
     <div style="display:grid;gap:6px"><b style="font-size:14px">Ensaio</b><div class="seg">${Object.entries(STATUS).map(([k,v])=>`<button class="${e.status===k?"on":""}" data-a="scstatus" data-id="${id}" data-k="${k}">${stIcon(k)} ${v.l}</button>`).join("")}</div></div>
+    ${(()=>{ const ks=[...inf.chars.map(n=>{ const c=charByName(p,n); return c?"fig:"+c.id:null; }).filter(Boolean),...(e.cenario.trim()?["cen:"+id]:[]),...lines(e.objetos).map(o=>"obj:"+norm(o)),...inf.els.filter(x=>x.t==="musica"&&x.x.trim()).map(x=>"som:"+norm(x.x)),...lines(e.som).map(x=>"som:"+norm(x))]; const u=[...new Set(ks)], f=u.filter(k=>!p.check[k]).length;
+      return u.length?`<div class="active-f" style="font-weight:400"><span>${f?`<b>${pl(f,"item a separar","itens a separar")}</b> para esta cena`:"✓ Tudo separado para esta cena"}</span><button class="btn sm ghost" data-a="ptabgo" data-k="necessidades">Ver em Montar</button></div>`:""; })()}
     <details class="more-d" ${ko("sh-prod",!!(p.lighting.cues.some(c=>c.sceneId===id)||e.cenario||e.objetos||e.som))}><summary>Produção desta cena <small>luz, cenário, objetos e som</small></summary><div style="display:grid;gap:14px;margin-top:6px">
     ${(()=>{ const ncs=p.lighting.cues.filter(c=>c.sceneId===id).length, nsn=soundList(p).filter(x=>x.s.el===e).length;
       return `<div class="techsum" aria-label="Resumo técnico"><div><span>Personagens</span><b>${inf.chars.length}</b></div><div><span>Duração</span><b>${fmt(inf.secs)}</b></div><div><span>Luz</span><b>${pl(ncs,"cue","cues")}</b></div><div><span>Som</span><b>${pl(nsn,"cue","cues")}</b></div><div><span>Cenário</span><b>${esc(e.cenario||"—")}</b></div><div><span>Objetos</span><b>${lines(e.objetos).length}</b></div></div>`; })()}
@@ -2122,7 +2183,7 @@ function renderBar(){
   const list=showSug?p.personagens.filter(c=>!q||norm(c.nome).includes(q)):[];
   w.innerHTML=`${showSug&&list.length?`<div class="sugs">${list.map(c=>`<button data-a="pick" data-n="${esc(c.nome)}"><span class="dot" style="background:${c.cor}"></span>${esc(c.nome)}</button>`).join("")}</div>`:""}
     <div class="typebar" role="toolbar" aria-label="Tipo de linha">${BAR.map(t=>`<button data-type="${t}" class="${e&&e.t===t?"on":""}" aria-pressed="${!!(e&&e.t===t)}" title="${esc(T[t].d)}">${T[t].l}</button>`).join("")}
-    ${narrow||sample?'<span class="sep"></span>':""}${narrow?`<button data-a="drawer" aria-label="Ver cenas" title="Ver cenas">${I.list}</button>`:""}${sample?`<button class="ai-btn" data-a="assist" title="Pedir ajuda à IA">${I.spark}IA</button>`:""}</div>
+    <span class="sep"></span><button class="ai-btn ${S.foco?"on":""}" data-a="foco" aria-pressed="${!!S.foco}" title="${S.foco?"Sair do modo foco":"Modo foco: esconde menus e listas, fica só a folha"}">${S.foco?"Sair do foco":"Foco"}</button>${sample?`<button class="ai-btn" data-a="assist" title="Pedir ajuda à IA">${I.spark}IA</button>`:""}</div>
     <div class="hint">Enter vai para a próxima linha · Tab muda o tipo · “JOÃO: fala” separa sozinho</div>`;
 }
 function elHTML(p,e,n){
@@ -2224,11 +2285,15 @@ function ensaioHTML(p){
     <div class="seg" role="tablist"><button role="tab" aria-selected="${S.rview!=="pend"}" class="${S.rview!=="pend"?"on":""}" data-a="rview" data-k="cena">Ensaiar por cena</button><button role="tab" aria-selected="${S.rview==="pend"}" class="${S.rview==="pend"?"on":""}" data-a="rview" data-k="pend">Pendências do ensaio${pend.length?` (${pend.length})`:""}</button></div>`;
   if(S.rview==="pend") return `<section class="panel">${top}${pend.length?`<div class="notes">${pend.map(({s,n})=>`<div class="n-item"><input type="checkbox" data-a="ntoggle" data-id="${s.el.id}" data-n="${n.id}" aria-label="Marcar como resolvida"><p><span class="pill ${n.tipo==="problema"?"warn":"brand"}">${n.tipo==="problema"?"Pendência":"Observação"}</span> <b>Cena ${s.n}</b> · ${esc(n.texto)}${n.data?` <span class="note">${new Date(n.data).toLocaleDateString("pt-BR",{day:"numeric",month:"short"})}</span>`:""}</p><button class="btn sm" data-a="rsel" data-id="${s.el.id}">Abrir cena</button></div>`).join("")}</div>`:`<div class="empty">Nenhuma pendência aberta. Quando algo precisar ser resolvido num ensaio, anote na cena.</div>`}</section>`;
   return `<section class="panel">${top}
-  <div class="rehearse"><div class="r-list">${sc.map(s=>{ const i2=sceneInfo(p,s); const open=(s.el.notas||[]).filter(n=>!n.feito).length;
+  <div class="scrow rpick only-narrow"><button class="btn sm icon ghost" data-a="rstep" data-d="-1" aria-label="Cena anterior" ${sel.n<=1?"disabled":""}>${I.back}</button>
+    <button class="scpick" data-a="rpick" aria-label="Escolher a cena para ensaiar"><b>Cena ${sel.n}</b><span>${esc(sel.el.x||"Sem nome")} · ${STATUS[sel.el.status].l}</span>${I.down}</button>
+    <button class="btn sm icon ghost" data-a="rstep" data-d="1" aria-label="Próxima cena" ${sel.n>=sc.length?"disabled":""}>${I.next}</button></div>
+  <div class="rehearse"><div class="r-list hide-narrow">${sc.map(s=>{ const i2=sceneInfo(p,s); const open=(s.el.notas||[]).filter(n=>!n.feito).length;
       return `<button class="r-item ${s===sel?"on":""}" ${s===sel?'aria-current="true"':""} data-a="rsel" data-id="${s.el.id}"><span class="st st-${s.el.status}" aria-hidden="true">${stIcon(s.el.status)}</span><span class="t"><b>Cena ${s.n} · ${esc(s.el.x||"Sem nome")}</b><small><span class="stl st-${s.el.status}">${STATUS[s.el.status].l}</span> · ${i2.chars.length} em cena · ${fmt(i2.secs)}${open?` · ${open} ${open===1?"anotação":"anotações"}`:""}${s.el.revisar?" · revisar":""}</small></span></button>`; }).join("")}
     <button class="btn sm" data-a="plano">${I.print}Plano de ensaio</button></div>
   <div class="col" id="rcol">
-    <div class="row"><h3 style="font-size:22px">Cena ${sel.n} · ${esc(e.x||"")}</h3><span class="spacer"></span><button class="btn sm" data-a="gotoscene" data-id="${e.id}">${I.pen}Editar texto</button></div>
+    <div class="row"><h3 style="font-size:22px">Cena ${sel.n} · ${esc(e.x||"")}</h3><span class="spacer"></span><button class="btn sm primary" data-a="rnote">${I.plus}Anotar</button><button class="btn sm" data-a="gotoscene" data-id="${e.id}">${I.pen}Editar texto</button></div>
+    ${(()=>{ const ab=(e.notas||[]).filter(n=>!n.feito); return ab.length?`<div class="active-f" style="font-weight:400"><span><b>${pl(ab.length,"pendência aberta","pendências abertas")}</b> nesta cena: ${esc(ab.slice(0,2).map(n=>n.texto).join(" · "))}${ab.length>2?"…":""}</span><button class="btn sm ghost" data-a="rnote">Ver</button></div>`:""; })()}
     ${e.local?`<span class="note" style="margin-top:-8px">${esc(e.local)}</span>`:""}
     <span class="eyebrow" style="margin-bottom:-8px">Situação desta cena</span><div class="seg" role="group" aria-label="Situação do ensaio">${Object.entries(STATUS).map(([k,v])=>`<button class="${e.status===k?"on":""}" data-a="scstatus" data-id="${e.id}" data-k="${k}" aria-pressed="${e.status===k}">${stIcon(k)} ${v.l}</button>`).join("")}
       <button class="${e.revisar?"on":""}" data-a="revisar" data-id="${e.id}" aria-pressed="${!!e.revisar}">⚑ Precisa revisar</button></div>
@@ -2257,23 +2322,40 @@ function propsIndex(p){
   lines(p.producao.objetos).forEach(o=>{ const k=norm(o); idx[k]=idx[k]||{nome:o,cenas:[]}; idx[k].geral=true; });
   return Object.values(idx);
 }
+function montarStatus(p,k){ const sc=named(p);
+  if(k==="falta"){ const all=needs(p).flatMap(g=>g.items), d=all.filter(x=>p.check[x.key]).length; return {t:all.length?`${d} de ${pl(all.length,"item separado","itens separados")}`:"Nada anotado ainda",ok:all.length&&d===all.length}; }
+  if(k==="elenco"){ const fal=p.personagens.filter(c=>lineCount(p,c)>0||charScenes(p,c).length), ca=fal.filter(c=>c.ator.trim()).length, M=micPlan(p), tot=M.cap.H+M.cap.S+M.cap.F, bad=M.scenes.filter(x=>x.falta).length;
+    return {t:`${ca} de ${pl(fal.length,"personagem com ator","personagens com ator")} · ${!tot?"microfones a cadastrar":bad?`faltam microfones em ${pl(bad,"cena","cenas")}`:`${pl(M.swaps.length,"troca","trocas")} de microfone`}`,ok:fal.length&&ca===fal.length&&tot&&!bad}; }
+  if(k==="figobj"){ const em=p.personagens.filter(c=>charScenes(p,c).length), f=em.filter(c=>c.figurino.trim()).length; return {t:`${f} de ${pl(em.length,"figurino definido","figurinos definidos")} · ${pl(propsIndex(p).length,"objeto","objetos")}`,ok:em.length&&f===em.length}; }
+  if(k==="cenario"){ const c=sc.filter(s=>s.el.cenario.trim()).length; return {t:`${c} de ${pl(sc.length,"cena com cenário","cenas com cenário")}`,ok:sc.length&&(c===sc.length||p.producao.cenario.trim())}; }
+  if(k==="luz"){ const ls=lightStats(p); return {t:`${pl(ls.total,"mudança de luz","mudanças de luz")} · ${ls.semLuz.length?pl(ls.semLuz.length,"cena sem luz","cenas sem luz"):"todas as cenas com luz"}`,ok:sc.length&&!ls.semLuz.length}; }
+  if(k==="som"){ const sd=p.musicas.filter(m=>m.tipo!=="fundo"&&!musSecs(m)).length; return {t:`${pl(p.musicas.length,"música","músicas")}${sd?` · ${sd} sem duração`:""}`,ok:p.musicas.length&&!sd}; }
+  return {t:"Matriz técnica e observações",ok:false}; }
+function montarHub(p){
+  return `<section class="panel"><div class="panel-head"><div><span class="eyebrow">Montar</span><h2>Montar a peça</h2><p>Tudo o que a peça precisa para subir ao palco. Toque numa parte para abrir.</p></div>
+    <button class="btn primary" data-a="needadd">${I.plus}Anotar algo que precisamos</button></div>
+    <div class="mgrid">${MONTAR.map(g=>{ const st=montarStatus(p,g.k); return `<button class="mcard" data-a="ptab" data-k="${g.subs[0][0]}"><span class="mc-t"><b>${g.l}</b><small>${g.d}</small><span class="mc-s ${st.ok?"ok":""}">${st.ok?"✓ ":""}${esc(st.t)}</span></span>${I.next}</button>`; }).join("")}</div></section>`; }
 function producaoHTML(p){
-  const sc=named(p); const t=S.ptab;
-  const tabs=[["lista","O que precisamos"],["elenco","Elenco"],["figurino","Figurino"],["cenario","Cenário"],["objetos","Objetos"],["som","Músicas e sons"],["mics","Microfones"],["luz","Iluminação"]];
-  const tabsMais=[["necessidades","Necessidades por cena"],["matriz","Quem está em cada cena"],["mtec","Matriz técnica"],["tecnica","Observações técnicas"]];
+  const sc=named(p); if(!S.ptab||S.ptab==="hub"||!montarOf(S.ptab)) return montarHub(p);
+  const t=S.ptab, grp=montarOf(t);
   let body="";
   if(t==="lista"){ const N=needs(p), all=N.flatMap(g=>g.items), done=all.filter(x=>p.check[x.key]).length;
     body=`<div class="row"><b>${done} de ${pl(all.length,"item pronto","itens prontos")}</b><div class="pbar" style="flex:1 1 140px" aria-hidden="true"><i style="width:${all.length?done/all.length*100:0}%"></i></div></div>
       <p class="note" style="margin:0">Montada a partir das cenas, dos personagens e do roteiro. Marque o que já está separado.</p>
       <div class="grid2 needs">${N.map(g=>`<div class="need-g"><div class="row"><h3 style="font-size:17px">${g.t}</h3><span class="pill">${g.items.filter(x=>p.check[x.key]).length}/${g.items.length}</span><span class="spacer"></span><button class="btn sm ghost" data-a="ptab" data-k="${g.tab}">Editar</button></div>
         ${g.items.length?g.items.map(x=>`<label class="ck ${p.check[x.key]?"done":""}"><input type="checkbox" data-a="ck" data-k="${esc(x.key)}" ${p.check[x.key]?"checked":""}><span><b>${esc(x.nome)}</b><small>${esc(x.det)}${x.extra?" · "+esc(x.extra):""}</small>${x.missing?`<small style="color:var(--warn)">${esc(x.missing)}</small>`:""}</span></label>`).join(""):`<span class="note">${g.empty}</span>`}</div>`).join("")}</div>`; }
-  if(t==="necessidades") body = sc.length? `<p class="note" style="margin:0">O que precisamos para apresentar cada cena.</p><div class="board">${sc.map(s=>{ const inf=sceneInfo(p,s); const mus=inf.els.filter(e=>e.t==="musica").map(e=>e.x);
-      return `<div class="card"><div class="row"><span class="eyebrow">Cena ${s.n}</span><span class="spacer"></span><button class="btn sm ghost" data-a="opensc" data-id="${s.el.id}">Editar</button></div><h3 style="font-size:18px">${esc(s.el.x||"Sem nome")}</h3>
-        <div class="need"><b>Elenco</b><div class="chips">${inf.chars.map(n=>{ const c=charByName(p,n); return `<span class="chip"><span class="dot" style="background:${c?c.cor:"#888"}"></span>${esc(n)}${c&&c.ator?` · ${esc(c.ator)}`:c?' · <span style="color:var(--warn)">sem ator</span>':""}</span>`; }).join("")||'<span class="note">—</span>'}</div></div>
-        <div class="need"><b>Figurino</b><span class="note">${inf.chars.map(n=>{ const c=charByName(p,n); return c&&c.figurino?`${esc(n)}: ${esc(c.figurino)}`:""; }).filter(Boolean).join(" · ")||"—"}</span></div>
-        <div class="need"><b>Cenário</b><span class="note">${esc(s.el.cenario)||"—"}</span></div>
-        <div class="need"><b>Objetos</b><span class="note">${lines(s.el.objetos).map(esc).join(", ")||"—"}</span></div>
-        <div class="need"><b>Som</b><span class="note">${[...mus,...lines(s.el.som)].map(esc).join(", ")||"—"}</span></div></div>`; }).join("")}</div>` : `<div class="empty">Crie cenas para ver o que cada uma precisa.</div>`;
+  if(t==="necessidades"){ const ck=(key,nome,det,miss)=>`<label class="ck ${p.check[key]?"done":""}"><input type="checkbox" data-a="ck" data-k="${esc(key)}" ${p.check[key]?"checked":""}><span><b>${esc(nome)}</b>${det?`<small>${esc(det)}</small>`:""}${miss?`<small style="color:var(--warn)">${esc(miss)}</small>`:""}</span></label>`;
+    body = sc.length? `<p class="note" style="margin:0">O que cada cena precisa. Marcar aqui marca também na lista por tipo, e vice-versa.</p><div class="board">${sc.map(s=>{ const inf=sceneInfo(p,s);
+      const items=[], seen=new Set(), add=(k,html)=>{ if(seen.has(k)) return; seen.add(k); items.push({k,html}); };
+      inf.chars.forEach(n=>{ const c=charByName(p,n); if(!c) return; add("fig:"+c.id,ck("fig:"+c.id,"Figurino: "+c.nome+(c.figurino.trim()?" — "+c.figurino:""),c.ator.trim()?"com "+c.ator:"sem ator",c.figurino.trim()?"":"Figurino não definido")); });
+      if(s.el.cenario.trim()) add("cen:"+s.el.id,ck("cen:"+s.el.id,"Cenário: "+s.el.cenario,""));
+      lines(s.el.objetos).forEach(o=>add("obj:"+norm(o),ck("obj:"+norm(o),o,"objeto")));
+      inf.els.filter(e=>e.t==="musica"&&e.x.trim()).forEach(e=>add("som:"+norm(e.x),ck("som:"+norm(e.x),e.x,"música ou efeito")));
+      lines(s.el.som).forEach(x=>add("som:"+norm(x),ck("som:"+norm(x),x,"som")));
+      const done=items.filter(x=>p.check[x.k]).length;
+      return `<div class="card"><div class="row"><span class="eyebrow">Cena ${s.n}</span><span class="pill ${items.length&&done===items.length?"ok":""}">${done}/${items.length} prontos</span><span class="spacer"></span><button class="btn sm ghost" data-a="opensc" data-id="${s.el.id}">Ficha da cena</button></div><h3 style="font-size:18px">${esc(s.el.x||"Sem nome")}</h3>
+        <div class="need"><b>Em cena</b><span class="note">${inf.chars.map(n=>{ const c=charByName(p,n); return esc(n)+(c&&c.ator?` (${esc(c.ator)})`:""); }).join(", ")||"—"}</span></div>
+        ${items.length?`<div class="need-g">${items.map(x=>x.html).join("")}</div>`:`<span class="note">Nada anotado para esta cena. Use “Ficha da cena” para anotar cenário, objetos e som.</span>`}</div>`; }).join("")}</div>` : `<div class="empty">Crie cenas para ver o que cada uma precisa.</div>`; }
   if(t==="elenco"){ const a=atoresN(p); body=`<div class="tbl"><table><tr><th>Personagem</th><th>Quem interpreta</th><th>Cenas</th><th>Falas</th></tr>${p.personagens.map((c,i)=>`<tr><td><span class="row" style="gap:6px;flex-wrap:nowrap"><span class="dot" style="background:${c.cor}"></span><b>${esc(c.nome)}</b></span></td><td><input type="text" data-f="personagens.${i}.ator" value="${esc(c.ator)}" placeholder="Nome" aria-label="Intérprete de ${esc(c.nome)}"></td><td>${charScenes(p,c).map(o=>o.s.n).join(", ")||"—"}</td><td>${lineCount(p,c)}</td></tr>`).join("")}</table></div>
     ${a&&p.personagens.length>a?`<span class="pill warn" style="white-space:normal">⚠ ${p.personagens.length} personagens para ${a} atores. Veja a matriz para saber quem pode fazer dois papéis.</span>`:""}`; }
   if(t==="figurino") body=`<div class="tbl"><table><tr><th>Personagem</th><th>Figurino</th><th>Quem</th></tr>${p.personagens.map((c,i)=>`<tr><td><b>${esc(c.nome)}</b></td><td><input type="text" data-f="personagens.${i}.figurino" value="${esc(c.figurino)}" aria-label="Figurino de ${esc(c.nome)}"></td><td>${esc(c.ator)||"—"}</td></tr>`).join("")}</table></div>`;
@@ -2300,12 +2382,10 @@ function producaoHTML(p){
   if(t==="mics") body=micsHTML(p);
   if(t==="mtec") body=mtecHTML(p);
   if(t==="tecnica") body=fld("producao.observacoes","Observações técnicas",p.producao.observacoes,"Luz, microfones, horários de ensaio, contrarregra",true)+fld("producao.outros","Outras coisas que precisamos",p.producao.outros,"Uma por linha. Aparecem na lista do que precisamos.",true);
-  const tb=([k,l])=>`<button role="tab" aria-selected="${t===k}" class="${t===k?"on":""}" data-a="ptab" data-k="${k}">${l}</button>`, inMais=tabsMais.some(([k])=>k===t);
-  return `<section class="panel"><div class="panel-head"><div><span class="eyebrow">${eyebrowOf("producao")}</span><h2>Produção</h2><p>Tudo o que a peça precisa para subir ao palco. Comece pela lista do que precisamos.</p></div>
-    <div class="row"><button class="btn primary" data-a="needadd">${I.plus}Anotar algo que precisamos</button>${sample?`<button class="btn sm spot" data-a="aiq" data-k="producao">${I.spark}Sugerir figurino e cenário</button>`:""}</div></div>
-  <div class="tabrow"><div class="ptabs main" role="tablist" aria-label="Partes da produção">${tabs.map(tb).join("")}</div>
-    <details class="tabmore" ${inMais?"open":ko("p-mais",false)}><summary>${inMais?esc((tabsMais.find(([k])=>k===t)||[])[1]):"Mais opções"} ▾</summary><div class="ptabs" role="tablist" aria-label="Mais opções da produção">${tabsMais.map(tb).join("")}</div></details></div>
-  ${t==="luz"?"":lsumHTML(p)}
+  return `<section class="panel"><div class="row"><button class="btn sm ghost" data-a="ptab" data-k="hub">${I.back}Montar</button></div>
+    <div class="panel-head" style="margin-top:-6px"><div><span class="eyebrow">Montar</span><h2>${grp.l}</h2></div>
+    <div class="row">${grp.k==="falta"?`<button class="btn primary" data-a="needadd">${I.plus}Anotar algo que precisamos</button>`:""}${sample&&(grp.k==="figobj"||grp.k==="cenario")?`<button class="btn sm spot" data-a="aiq" data-k="producao">${I.spark}Sugerir figurino e cenário</button>`:""}</div></div>
+    ${grp.subs.length>1?`<div class="seg" role="tablist" aria-label="${esc(grp.l)}">${grp.subs.map(([k,l])=>`<button role="tab" aria-selected="${t===k}" class="${t===k?"on":""}" data-a="ptab" data-k="${k}">${l}</button>`).join("")}</div>`:""}
   ${body}<div id="aiInline"></div></section>`;
 }
 function needs(p){
@@ -2864,6 +2944,7 @@ ${PRINT_CSS}</style></head><body><div class="dica">A janela de impressão abre s
 <script>window.addEventListener("load",function(){setTimeout(function(){try{window.print()}catch(e){}},700)});<\/script></body></html>`;
 }
 const DOCS_TOP=["roteiro","falas","ficha","ensaio","necessidades","operador"];
+const DOC_GROUPS=[["Para o elenco",["porCena","personagem","cenas"]],["Para a produção",["tecnica","figurinos","objetos","musicas"]],["Para a técnica (luz, som e microfones)",["luz","som","mic","mtec"]]];
 function docsSummary(p){
   const o=S.print, D=o.docs, sc=named(p), nm=k=>(DOCS.find(x=>x[0]===k)||[])[1];
   const pers=o.atorSel==="todos"?"todos os personagens":((p.personagens.find(c=>c.id===o.atorSel)||{}).nome||"todos os personagens");
@@ -2888,8 +2969,9 @@ function documentosHTML(p){
   const sm=docsSummary(p), none=!sm.sel.length;
   return `<section class="panel"><div class="panel-head"><div><span class="eyebrow">${eyebrowOf("documentos")}</span><h2>Documentos</h2><p>Marque o que quer imprimir. Tudo sai no padrão de teatro, com os dados da peça.</p></div></div>
   <div class="sec-title"><h3>1. Escolha os documentos</h3>${none?"":`<button class="btn sm ghost" data-a="docsclear">Desmarcar todos</button>`}</div>
-  <div class="docs">${top.map(doc).join("")}</div>
-  <details class="more-d" ${restOn?"open":ko("d-mais",false)}><summary>Mais documentos <small>${restOn?pl(restOn,"marcado","marcados"):"roteiro por cena, ficha técnica, listas, iluminação"}</small></summary><div class="docs" style="margin-top:6px">${rest.map(doc).join("")}</div></details>
+  <span class="eyebrow">Mais usados</span><div class="docs">${top.map(doc).join("")}</div>
+  <details class="more-d" ${restOn?"open":ko("d-mais",false)}><summary>Todos os documentos, por assunto <small>${restOn?pl(restOn,"marcado","marcados"):"elenco, ensaio, produção e técnica"}</small></summary>
+    ${DOC_GROUPS.map(([g,ks])=>{ const l=rest.filter(([k])=>ks.includes(k)); return l.length?`<span class="eyebrow" style="display:block;margin:12px 0 6px">${g}</span><div class="docs">${l.map(doc).join("")}</div>`:""; }).join("")}</details>
   ${needActor||needScene||needAtor?`<div class="sec-title"><h3>2. Para quem?</h3></div><div class="grid2">${needAtor?`<label class="f">Ficha do ator: para qual ator?<select data-p="atorNome"><option value="todos">Todos os atores</option>${actorGroups(p).map(g=>`<option value="${esc(g.key)}" ${o.atorNome===g.key?"selected":""}>${esc(g.nome||"Sem intérprete")} · ${esc(g.chars.map(c=>c.nome).join(", "))}</option>`).join("")}</select></label>`:""}${needActor?`<label class="f">Falas e ficha: para qual personagem?<select data-p="atorSel"><option value="todos">Todos os personagens</option>${p.personagens.map(c=>`<option value="${c.id}" ${o.atorSel===c.id?"selected":""}>${esc(c.nome)}</option>`).join("")}</select></label>`:""}
     ${needScene?`<label class="f">Roteiro por cena: qual cena?<select data-p="cenaSel"><option value="">Todas as cenas, uma por página</option>${sc.map(s=>`<option value="${s.el.id}" ${o.cenaSel===s.el.id?"selected":""}>Cena ${s.n} · ${esc(s.el.x)}</option>`).join("")}</select></label>`:""}</div>
     ${o.atorSel!=="todos"||o.atorNome!=="todos"||o.cenaSel?`<div class="row"><button class="btn sm ghost" data-a="docsall">Limpar filtros (voltar para todos)</button></div>`:""}`:""}
@@ -3158,11 +3240,34 @@ function saveNeed(p,txt,k,sid){ const L=lines(txt); if(!L.length) return 0; cons
   return L.length; }
 function openMore(){
   navLayer();
-  $("#layer").innerHTML=`<div class="sheet" data-a="close"><div class="card2" role="dialog" aria-label="Mais">
-    <div class="sheet-head"><h2>Mais</h2><button class="btn sm icon ghost" data-a="close" aria-label="Fechar">${I.x}</button></div>
-    <div class="more">${GROUPS.map(g=>`<span class="grp-h">${g}</span>${STAGES.filter(s=>s.g===g).map(s=>`<button class="btn ${cur()&&cur().tab===s.k&&!(s.k==="producao"&&S.ptab==="luz")?"on":""}" data-a="tab" data-k="${s.k}">${I[s.k]}${s.k==="documentos"?"Documentos e impressão":s.l}</button>${s.k==="producao"?`<button class="btn ${cur()&&cur().tab==="producao"&&S.ptab==="luz"?"on":""}" data-a="luzgo" data-k="luz">${I.bulb}Iluminação</button>`:""}`).join("")}`).join("")}
-    <span class="grp-h">Outras opções</span><button class="btn" data-a="capture">${I.bulb}Anotar ideia</button><button class="btn" data-a="ideasview">${I.list}Minhas ideias</button><button class="btn ${S.guiado?"on":""}" data-a="guiado" aria-pressed="${S.guiado}">${S.guiado?"Sair do modo guiado":"Ligar o modo guiado (um passo por vez)"}</button><button class="btn" data-a="home">${I.back}Minhas peças</button></div></div></div>`;
+  $("#layer").innerHTML=`<div class="sheet" data-a="close"><div class="card2" role="dialog" aria-label="Mais opções">
+    <div class="sheet-head"><h2>Mais opções</h2><button class="btn sm icon ghost" data-a="close" aria-label="Fechar">${I.x}</button></div>
+    <div class="more"><button class="btn" data-a="capture">${I.bulb}Anotar ideia</button><button class="btn" data-a="ideasview">${I.list}Minhas ideias</button><button class="btn ${S.guiado?"on":""}" data-a="guiado" aria-pressed="${S.guiado}">${S.guiado?"Sair do modo guiado":"Ligar o modo guiado (um passo por vez)"}</button><button class="btn" data-a="home">${I.back}Minhas peças</button></div></div></div>`;
 }
+/* ---------- seletor de cena do roteiro: sempre no topo, acompanha a rolagem ---------- */
+function curScByScroll(p){ const sc=named(p); if(!sc.length) return null;
+  if(S.guiado){ const s=scenes(p)[Math.min(S.focus,scenes(p).length-1)]; return s&&s.el?s.el.id:sc[0].el.id; }
+  const lim=($("#topbar")?.getBoundingClientRect().bottom||0)+40; let id=sc[0].el.id;
+  $$("#page .el-cena").forEach(w=>{ if(w.getBoundingClientRect().top<=lim) id=w.dataset.wrap; }); return id; }
+function updScRow(force){ const p=cur(), row=$("#scrow"); if(!p||!row||p.tab!=="roteiro") return; const sc=named(p);
+  if(!sc.length){ if(row.innerHTML) row.innerHTML=""; return; }
+  const id=curScByScroll(p); if(!force&&id===S.viewSc&&row.innerHTML) return; S.viewSc=id;
+  const k=sc.findIndex(s=>s.el.id===id), s=sc[k]||sc[0];
+  row.innerHTML=`<button class="btn sm icon ghost" data-a="scprev" aria-label="Cena anterior" ${k<=0?"disabled":""}>${I.back}</button>
+    <button class="scpick" data-a="scpick" aria-label="Escolher cena"><b>Cena ${s.n}</b><span>${esc(s.el.x||"Sem nome")}</span>${I.down}</button>
+    <button class="btn sm icon ghost" data-a="scnext" aria-label="Próxima cena" ${k>=sc.length-1?"disabled":""}>${I.next}</button>
+    <button class="btn sm ${S.foco?"on":"ghost"}" data-a="foco" aria-pressed="${!!S.foco}" aria-label="${S.foco?"Sair do modo foco":"Modo foco"}" title="${S.foco?"Sair do modo foco":"Modo foco: esconde menus e listas"}">${S.foco?"Sair":"Foco"}</button>`; setHdr(); }
+let scT=0; window.addEventListener("scroll",()=>{ if(scT) return; scT=requestAnimationFrame(()=>{ scT=0; const p=cur(); if(S.view==="edit"&&p&&p.tab==="roteiro") updScRow(); }); },{passive:true});
+window.addEventListener("resize",()=>setHdr());
+function jumpScene(p,id){ const s=sceneById(p,id); if(!s) return; setPos(p,id);
+  if(S.guiado){ S.focus=Math.max(0,scenes(p).findIndex(x=>x.el&&x.el.id===id)); renderMain(); scrollTo(0,0); }
+  else { const el=$(`[data-wrap="${id}"]`); if(el) el.scrollIntoView({block:"start"}); }
+  S.viewSc=id; setTimeout(()=>updScRow(true),60); }
+function openScenePicker(mode){ const p=cur(); navLayer(); const sc=named(p), ens=mode==="ensaio", curId=ens?S.sceneSel:S.viewSc;
+  $("#layer").innerHTML=sheetWrap(ens?"Escolher cena para ensaiar":"Ir para a cena",`<span class="eyebrow">${ens?"Ensaio":"Roteiro"}</span><h2>${ens?"Qual cena vamos ensaiar?":"Ir para a cena"}</h2>`,`
+    <div class="r-list">${sc.map(s=>{ const inf=sceneInfo(p,s), ab=(s.el.notas||[]).filter(n=>!n.feito).length; return `<button class="r-item ${s.el.id===curId?"on":""}" data-a="jumpsc" data-mode="${ens?"ensaio":""}" data-id="${s.el.id}" ${s.el.id===curId?'aria-current="true"':""}>${ens?`<span class="st st-${s.el.status}" aria-hidden="true">${stIcon(s.el.status)}</span>`:""}<span class="t"><b>Cena ${s.n} · ${esc(s.el.x||"Sem nome")}</b><small>${ens?`<span class="stl st-${s.el.status}">${STATUS[s.el.status].l}</span> · ${inf.chars.length} em cena${ab?` · ${pl(ab,"pendência","pendências")}`:""}${s.el.revisar?" · revisar":""}`:`${fmt(inf.secs)} · ${inf.falas?pl(inf.falas,"fala","falas"):inf.written?"sem falas":"a escrever"}${s.el.local?" · "+esc(s.el.local):""}`}</small></span></button>`; }).join("")}</div>
+    ${ens?`<button class="btn" data-a="plano">${I.print}Plano de ensaio</button>`:`<button class="btn" data-a="addscene">${I.plus}Nova cena</button>`}`);
+  setTimeout(()=>$("#layer .r-item.on")?.scrollIntoView({block:"center"}),40); }
 function openDrawer(){
   navLayer();
   $("#layer").innerHTML=`<div class="sheet left" data-a="close"><div class="card2" role="dialog" aria-label="Cenas e personagens">
@@ -3231,7 +3336,7 @@ document.addEventListener("focusin",e=>{
     if(window.innerWidth<=760) document.body.classList.add("typing");
     $$(".typebar [data-type]").forEach(b=>{ const on=el&&b.dataset.type===el.t; b.classList.toggle("on",on); b.setAttribute("aria-pressed",!!on); });
     const hasSug=!!$(".sugs"); if((el&&el.t==="personagem"&&window.innerWidth<1000)!==hasSug) renderBar();
-    const ci=currentScene(p); $$("#side .nav-item").forEach(b=>b.classList.toggle("on",+b.dataset.i===ci)); const cs=scenes(p)[ci]; if(cs&&cs.el) setPos(p,cs.el.id); }
+    const ci=currentScene(p); $$("#side .nav-item").forEach(b=>b.classList.toggle("on",+b.dataset.i===ci)); const cs=scenes(p)[ci]; if(cs&&cs.el) setPos(p,cs.el.id); setTimeout(()=>{ setHdr(); updScRow(); },60); }
   if(t.dataset&&/^personagens\.\d+\.nome$/.test(t.dataset.f||"")) renameFrom=t.value;
   if(window.innerWidth<=760&&t.matches&&t.matches(".sheet input, .sheet textarea, .sheet select")) setTimeout(()=>{ if(document.activeElement===t) t.scrollIntoView({block:"center"}); },320);
 });
@@ -3351,6 +3456,7 @@ document.addEventListener("click",async e=>{
     case "npai": createFromNew(true); break;
     case "open": { navTo(); S.menu=null; S.renaming=null; S.lastId=b.dataset.id; S.view="edit"; S.charSel=null; S.showLong=false; S.rview="cena"; undo.length=0; chat=[]; const pp=cur(); if(!pp) return; ensureDefaults(pp); if(b.dataset.k) pp.tab=b.dataset.k; restorePos(pp); saveLocal(); render(); revealPos(pp); break; }
     case "pmenu": S.menu=S.menu===b.dataset.id?null:b.dataset.id; refreshGrid(); break;
+    case "savedinfo": { const st=savedInfo(pending.size>0||!!saveT); if(st.retry){ SYNC.fail.forEach(id=>SYNC.q.add(id)); SYNC.fail.clear(); runSync(); toast("Tentando sincronizar de novo…"); } else if(S.saveErr){ if(saveLocal()) toast("Salvo neste aparelho."); else toast(st.tip); } else toast(st.tip); break; }
     case "capture": openCapture(); break;
     case "micnao": { const c=p.personagens.find(x=>x.id===b.dataset.id); if(!c) return; c.mic=c.mic==="nao"?"":"nao"; touch(p); renderMain(); break; }
     case "micdoc": Object.keys(S.print.docs).forEach(k=>S.print.docs[k]=false); S.print.docs.mic=true; saveLocal(); goTab(p,"documentos"); break;
@@ -3387,10 +3493,22 @@ document.addEventListener("click",async e=>{
     case "ren": S.renaming=b.dataset.id; S.menu=null; refreshGrid(); setTimeout(()=>{ const r=$("#ren"); if(r){ r.focus(); r.select(); } },30); break;
     case "renok": { const pp=S.plays[b.dataset.id]; const v=(($("#ren")||{}).value||"").trim(); if(pp&&v){ pp.titulo=v; pp.updatedAt=Date.now(); pending.add(pp.id); flush(); } S.renaming=null; refreshGrid(); if(pp&&v) toast("Nome alterado"); break; }
     case "renno": S.renaming=null; refreshGrid(); break;
-    case "dup": { const src=S.plays[b.dataset.id]; if(!src) return; const c=ensureDefaults(JSON.parse(JSON.stringify(src))); c.id=uid(); delete c.exemplo; c.fav=false; c.titulo=(src.titulo||"Peça sem título")+" (cópia)"; c.updatedAt=Date.now(); S.plays[c.id]=c; pending.add(c.id); flush(); S.menu=null; refreshGrid(); toast("Cópia criada: "+c.titulo); break; }
+    case "dup": { const src=S.plays[b.dataset.id]; if(!src) return; const c=ensureDefaults(JSON.parse(JSON.stringify(src))); c.id=uid(); (c.ideias||[]).forEach(x=>x.id=uid()); delete c.exemplo; c.fav=false; c.titulo=(src.titulo||"Peça sem título")+" (cópia)"; c.updatedAt=Date.now(); S.plays[c.id]=c; pending.add(c.id); flush(); S.menu=null; refreshGrid(); toast("Cópia criada: "+c.titulo); break; }
     case "askdel": if(S.menu){ S.menu=null; refreshGrid(); } $("#del-"+b.dataset.id).hidden=false; break;
     case "nodel": $("#del-"+b.dataset.id).hidden=true; break;
     case "del": { const id=b.dataset.id; const pp=S.plays[id]; if(!pp) return; S.lastDel={p:pp,wasLast:S.lastId===id}; delete S.plays[id]; delete S.an[id]; if(S.lastId===id) S.lastId=null; saveLocal(); render(); toastBtn(`“${pp.titulo||"Peça sem título"}” foi excluída.`,"Desfazer","undodel"); if(db&&me&&id!=="exemplo"){ try{ await db.collection("data/users/"+me).doc(id).delete(); }catch(_){} } break; }
+    case "moment": { const k=b.dataset.k, m=MOMENTS.find(x=>x.k===k); if(!m) return;
+      if(k==="escrever"){ if(WRITE.includes(p.tab)&&!(p.tab==="personagens"&&S.charSel)) break; goTab(p,WRITE.includes(p.tab)?p.tab:(S.lastWrite||(named(p).length?"roteiro":"historia"))); if(p.tab==="personagens"&&S.charSel&&window.innerWidth<1000){ S.charSel=null; renderMain(); } break; }
+      if(k==="montar"){ if(p.tab==="producao"&&S.ptab==="hub") break; navTo(); S.ptab="hub"; p.tab="producao"; keep(); closeLayer(); render(); scrollTo(0,0); break; }
+      goTab(p,m.tab); break; }
+    case "scpick": openScenePicker(); break;
+    case "jumpsc": closeLayer(); if(b.dataset.mode==="ensaio"){ S.sceneSel=b.dataset.id; S.rchar=""; S.rview="cena"; setPos(p,b.dataset.id); renderMain(); scrollTo(0,0); } else jumpScene(p,b.dataset.id); break;
+    case "rpick": openScenePicker("ensaio"); break;
+    case "ptabgo": navTo(); closeLayer(); S.ptab=b.dataset.k; p.tab="producao"; keep(); render(); scrollTo(0,0); break;
+    case "rstep": { const sc=named(p), k=sc.findIndex(s=>s.el.id===S.sceneSel), n=sc[k+(+b.dataset.d)]; if(n){ S.sceneSel=n.el.id; S.rchar=""; setPos(p,n.el.id); renderMain(); scrollTo(0,0); } break; }
+    case "rnote": { const t=$("#noteIn"); if(t){ t.scrollIntoView({block:"center"}); t.focus(); } break; }
+    case "foco": S.foco=!S.foco; render(); setTimeout(()=>{ const p2=cur(); if(p2&&p2.lastScene){ const el=$(`[data-wrap="${p2.lastScene}"]`); if(el) el.scrollIntoView({block:"start"}); } updScRow(true); },30); toast(S.foco?"Modo foco: só a folha. Toque em “Sair” no topo para voltar.":"Menus de volta."); break;
+    case "scprev": case "scnext": { const sc=named(p), k=sc.findIndex(s=>s.el.id===S.viewSc), n=sc[k+(a==="scnext"?1:-1)]; if(n) jumpScene(p,n.el.id); break; }
     case "tab": if(b.dataset.k==="personagens"&&p.tab==="personagens"&&S.charSel&&window.innerWidth<1000){ navTo(); S.charSel=null; closeLayer(); renderMain(); scrollTo(0,0); break; } goTab(p,b.dataset.k); break;
     case "more": openMore(); break;
     case "guiado": S.guiado=!S.guiado; if(S.guiado) S.focus=currentScene(p); saveLocal(); closeLayer(); render(); break;
@@ -3494,7 +3612,7 @@ document.addEventListener("click",async e=>{
     case "ndel": { const s=sceneById(p,b.dataset.id); if(!s) return; s.el.notas=s.el.notas.filter(x=>x.id!==b.dataset.n); touch(p); renderMain(); break; }
     case "plano": Object.keys(S.print.docs).forEach(k=>S.print.docs[k]=false); S.print.docs.ensaio=true; saveLocal(); goTab(p,"documentos"); break;
     /* produção e documentos */
-    case "ptab": { const was=S.ptab; S.ptab=b.dataset.k; if((was==="luz")!==(S.ptab==="luz")) render(); else renderMain(); break; }
+    case "ptab": { const k=b.dataset.k, g0=montarOf(S.ptab), g1=montarOf(k); if(g0!==g1) navTo(); S.ptab=k; render(); if(g0!==g1) scrollTo(0,0); break; }
     case "tam": S.print.tamanho=b.dataset.k; saveLocal(); renderMain(); break;
     case "aiq": { const inSheet=!!$("#aiOut"); aiPlan(b.dataset.k, inSheet?$("#aiOut"):$("#aiInline")); break; }
     case "aigen": aiGenerate(b.dataset.k); break;
